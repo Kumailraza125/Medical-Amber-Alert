@@ -1,50 +1,27 @@
-# Hospital Connect demo
+# Hospital Connect shared demo
 
-An interactive hospital resource coordination dashboard built for TeamM8s_App.
+A dashboard for exploring coordination between fictional hospitals. Anyone visiting can switch to any sample hospital. Requests, responses and completion changes save in Piezas and are shared by all visitors. Do not enter patient or confidential information. No real alerts are sent.
 
-## Run locally
+## Run
 
-Requires Node.js 20 or newer and npm.
+Use Node 22+ and npm. Run `npm ci`, configure server-only `.env` values `PIEZAS_API_KEY`, `PIEZAS_TEST_API_KEY` and `PIEZAS_API_URL=https://api.piezas.ai`, then `npm run build` and `npm run dev`. Open http://localhost:3100.
 
-```sh
-npm ci
-npm run dev
-```
-
-Open http://localhost:3100. To use another port, run `npm run dev -- --port 3200`.
+`npm run build` bundles the Node server and the published SDK into `runtime/`, with browser assets in `runtime/public/`. No secrets are bundled. Publish `runtime/` as a server app.
 
 ## Try the workflow
 
-1. Start as Cedar Valley Community Hospital and create an MRI request.
-2. Switch to Maplewood Regional Hospital and choose Incoming.
-3. Open the request and offer an availability time.
-4. Switch back to Cedar Valley, accept the response, then mark the request completed.
+Create an MRI request as Cedar Valley, switch to Maplewood and open Incoming, offer availability, then switch back to Cedar Valley to accept and complete it. Refresh loads changes made by another visitor.
 
-The hospital directory lists sample resources. Resource and radius matching uses fictional facility coordinates and straight-line distances.
+## Checks
 
-## Files
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3101 npx piezas test` runs real Piezas calls using the separate test key. Each browser test has its own fixture tag in the test app; none seed the live app. A fresh key is never exposed to browser code. Run the quality scan and then the checks last before publishing.
 
-- `dist/index.html`, `dist/styles.css`: page structure and styling.
-- `dist/app.js`: dashboard and in-memory request workflow.
-- `dist/seed.js`: fictional hospitals and requests.
-- `scripts/serve.mjs`: local static server.
-- `SPEC.md`: agreed demo scope and acceptance criteria.
-- `tests/scenarios/`: seven Playwright workflow checks.
+## Limits
 
-The HTML, CSS, and JavaScript in `dist/` are the editable source; no bundler is required. `npm run build` checks JavaScript syntax. A static web host can serve `dist/` directly.
+Hospital resources and coordinates are fictional; radius matching uses straight-line distance. There is no patient handling, staff authentication, clinical suitability check, or real capacity guarantee. Anyone with the link may change the shared fictional requests. Hosting runs one app process; horizontal scaling requires a durable concurrency design first.
 
-## Check the app
+## Hackathon extension
 
-```sh
-npm run build
-npx playwright install chromium
-npx playwright test
-```
+Open `/workspace.html` for synthetic case intake, explained demo screening, facility and crew readiness, duplicate-data review, CSV/JSON/XLSX dataset exports, validated CSV/JSON import and no-charge worker-payment approval. The Submission tab includes the third-option case answers and downloadable summary, pitch script and slides. `python docs/generate-submission.py` regenerates the handoff files; it requires ReportLab and python-pptx. The normal build copies the checked-in deliverable assets and needs no Python.
 
-The browser configuration uses Playwright's installed Chromium by default. On Linux with a system browser, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium`.
-
-## Demo limitations
-
-All hospitals and requests are fictional. Changes reset on refresh and are not shared between visitors. No patient data, real notifications, authentication, or live backend is included. The included Piezas packages support future backend work; this demo makes no Piezas API calls and needs no API key.
-
-The hosting account settings, credentials, and generated local state are intentionally excluded. The existing privately hosted demo remains separate from this GitHub repository.
+The owner confirmed no interview has happened yet. That judging requirement remains outstanding. Screening is deterministic illustrative logic, not trained clinical AI. Payments are a no-charge demonstration, as chosen by the owner. No real clinical dataset, live payment gateway or real staff accounts are used.

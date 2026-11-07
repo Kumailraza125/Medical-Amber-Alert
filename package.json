@@ -4,14 +4,16 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "piezas": "^0.7.7",
-    "@playwright/test": "^1.47.0"
+    "@playwright/test": "^1.47.0",
+    "esbuild": "^0.28.2",
+    "piezas": "^0.7.7"
   },
   "dependencies": {
     "@piezas/sdk": "^0.5.2"
   },
   "scripts": {
-    "dev": "node scripts/serve.mjs",
-    "build": "node --check dist/app.js && node --check dist/seed.js"
+    "dev": "node --env-file-if-exists=.env server.js",
+    "build": "node --check dist/app.js && node scripts/build.mjs",
+    "start": "node runtime/server.js"
   }
 }

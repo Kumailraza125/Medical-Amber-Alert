@@ -1,0 +1,27 @@
+import {test,expect} from '@playwright/test';
+test('Follow a case through the completed hospital workflow',async({page})=>{
+ await page.goto('/workspace.html');
+ await page.getByTestId('profile-id').selectOption('demo-002');
+ await page.getByTestId('synthetic-confirmed').check();
+ await page.getByTestId('save-case').click();
+ await page.getByTestId('refer-case').click();
+ await page.getByTestId('open-referral').click();
+ await expect(page.getByTestId('detail-note')).toContainText('CASE-0001');
+ await page.locator('#close-detail').click();
+ await page.getByTestId('hospital-switch').selectOption('maple');
+ await page.getByTestId('incoming-tab').click();
+ await page.getByTestId('request-HC-1043').click();
+ await page.getByTestId('offer-availability').click();
+ await expect(page.getByTestId('offer-confirmation')).toBeVisible();
+ await page.locator('#close-detail').click();
+ await page.getByTestId('hospital-switch').selectOption('cedar');
+ await page.getByTestId('all-tab').click();
+ await page.getByTestId('request-HC-1043').click();
+ await page.getByTestId('accept-maple').click();
+ await page.getByTestId('complete-request').click();
+ await expect(page.locator('#detail-modal')).toContainText('Completed');
+ await page.goto('/workspace.html');
+ await expect(page.getByTestId('case-CASE-0001')).toContainText('Completed');
+ await page.getByTestId('case-CASE-0001').click();
+ await expect(page.getByTestId('case-detail')).toContainText('Completed');
+});
