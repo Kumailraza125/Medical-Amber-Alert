@@ -1,0 +1,3 @@
+// piezas-scenario: S-002 v=c9ca83575d52
+import {test,expect} from '@playwright/test';
+test('Send a resource request from the dashboard', async ({ page }) => {await page.goto('/');await page.getByTestId('new-request').click();await expect(page.getByTestId('radius')).toHaveValue('100');await page.getByTestId('resource').selectOption('MRI');await page.getByTestId('urgency').selectOption('Urgent');await page.getByTestId('send-request').click();await page.getByTestId('request-HC-1043').click();await expect(page.locator('#detail-modal')).toContainText('100 km radius');await expect(page.locator('#detail-modal')).toContainText('Awaiting responses');});
