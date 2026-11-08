@@ -1,0 +1,3 @@
+// piezas-scenario: S-005 v=b0a248639e58
+import {test,expect} from '@playwright/test';
+test('Accept a response and finish the request', async ({ page }) => {await page.goto('/');await page.getByTestId('request-HC-1042').click();await page.getByTestId('accept-maple').click();await expect(page.getByTestId('destination')).toContainText('Maplewood Regional Hospital');await expect(page.locator('#detail-modal')).toContainText('Accepted');await page.getByTestId('complete-request').click();await expect(page.locator('#detail-modal')).toContainText('Completed');await expect(page.getByTestId('destination')).toContainText('Maplewood Regional Hospital');await expect(page.getByTestId('complete-request')).toHaveCount(0);});

@@ -1,0 +1,3 @@
+// piezas-scenario: S-004 v=2f17317ced94
+import {test,expect} from '@playwright/test';
+test('Offer availability once from a matching hospital', async ({ page }) => {await page.goto('/');await page.getByTestId('new-request').click();await page.getByTestId('send-request').click();await page.getByTestId('hospital-switch').selectOption('maple');await page.getByTestId('incoming-tab').click();await page.getByTestId('request-HC-1043').click();await page.getByTestId('availability').fill('45');await page.getByTestId('offer-availability').click();await expect(page.getByTestId('offer-confirmation')).toBeVisible();await expect(page.locator('#detail-modal')).toContainText('Available in 45 minutes');await expect(page.getByTestId('offer-availability')).toHaveCount(0);});
