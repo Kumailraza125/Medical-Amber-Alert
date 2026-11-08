@@ -1,0 +1,17 @@
+{
+  "name": "hospital-connect",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "piezas": "^0.7.7",
+    "@playwright/test": "^1.47.0"
+  },
+  "dependencies": {
+    "@piezas/sdk": "^0.5.2"
+  },
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node --check dist/app.js && node --check dist/seed.js"
+  }
+}
