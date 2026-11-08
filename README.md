@@ -1,2 +1,2 @@
 # Medical-Amber-Alert
-A alert to all hospitals in the area requesting certain resources
+A hospital resource coordination app that helps medical staff request resources from nearby facilities, review availability, and coordinate referrals.
