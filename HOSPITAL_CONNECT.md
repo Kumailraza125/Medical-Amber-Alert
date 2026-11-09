@@ -1,31 +1,25 @@
-# Hospital Connect shared demo
+# Hospital Connect: core EMS workflow
 
-A dashboard for exploring coordination between fictional hospitals. Anyone visiting can switch to any sample hospital. Requests, responses and completion changes save in Piezas and are shared by all visitors. Do not enter patient or confidential information. No real alerts are sent.
+## EMS sends a request
 
-## Run
+Choose an EMS dispatch base, required resource, human-set priority, search radius and recipient hospital. Select all eligible nearby hospitals when seeking the first available acceptance. The server saves an EMS desk identity and an immutable recipient list in Piezas. Notes are limited to resource/timing coordination; no patient information should be entered.
 
-Use Node 22+ and npm. Run `npm ci`, configure server-only `.env` values `PIEZAS_API_KEY`, `PIEZAS_TEST_API_KEY` and `PIEZAS_API_URL=https://api.piezas.ai`, then `npm run build` and `npm run dev`. Open http://localhost:3100.
+## Hospital accepts directly
 
-`npm run build` bundles the Node server and the published SDK into `runtime/`, with browser assets in `runtime/public/`. No secrets are bundled. Publish `runtime/` as a server app.
+Switch to the Hospital desk and select the receiving sample hospital. Open an incoming request and choose **Accept request — notify EMS**. The server checks eligibility, saved recipients, current availability and request status. The first valid hospital acceptance records that hospital as the destination; a competing acceptance gets a conflict rather than overwriting it. There is no second EMS approval step.
 
-## Try the workflow
+## EMS is notified
 
-Create an MRI request as Cedar Valley, switch to Maplewood and open Incoming, offer availability, then switch back to Cedar Valley to accept and complete it. Refresh loads changes made by another visitor.
+A visible EMS desk checks saved updates about every four seconds and when returning to the page. Its acceptance panel names the hospital and shows the acceptance timestamp. The notice remains available after refresh; marking it read saves a timestamp on the same Piezas request. EMS can optionally mark the handoff completed while retaining the accepting hospital and notification history.
 
-## Checks
+## Supporting map and availability
 
-`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3101 npx piezas test` runs real Piezas calls using the separate test key. Each browser test has its own fixture tag in the test app; none seed the live app. A fresh key is never exposed to browser code. Run the quality scan and then the checks last before publishing.
+The BC map retains its existing geographic outline, optional street tiles, hospital markers and resource/status/radius filters. Hospital availability is edited in the Hospital desk. The hospitals and availability remain examples, not verified clinical capacity. See `docs/MAP_SOURCES.md` for attribution.
 
-## Limits
+## Retired scope
 
-Hospital resources and coordinates are fictional; radius matching uses straight-line distance. There is no patient handling, staff authentication, clinical suitability check, or real capacity guarantee. Anyone with the link may change the shared fictional requests. Hosting runs one app process; horizontal scaling requires a durable concurrency design first.
+The owner asked to keep only the core EMS → hospital acceptance → EMS notification workflow. Patient-case screening, dataset imports/exports, worker payments and hackathon submission screens/APIs/downloads are no longer served. The former `/workspace.html` link redirects to the core app. Existing Piezas records are not deleted; historical source and checks are archived under `docs/archive`.
 
-## Hackathon extension
+## Operational limits
 
-Open `/workspace.html` for synthetic case intake, explained demo screening, facility and crew readiness, duplicate-data review, CSV/JSON/XLSX dataset exports, validated CSV/JSON import and no-charge worker-payment approval. The Submission tab includes the third-option case answers and downloadable summary, pitch script and slides. `python docs/generate-submission.py` regenerates the handoff files; it requires ReportLab and python-pptx. The normal build copies the checked-in deliverable assets and needs no Python.
-
-The owner confirmed no interview has happened yet. That judging requirement remains outstanding. Screening is deterministic illustrative logic, not trained clinical AI. Payments are a no-charge demonstration, as chosen by the owner. No real clinical dataset, live payment gateway or real staff accounts are used.
-
-## BC map and request overview
-
-Open `/network.html` for the interactive map or use the dashboard's nearby panel. The BC geography is real; the hospital network and capacity remain fictional. Each dashboard card opens a dedicated active/incoming/nearby/completed view. Request details now distinguish saved recipient snapshots from current matches and show saved response, acceptance and completion events. See `docs/MAP_SOURCES.md` for licences, fallback behaviour and data semantics.
+No real patient data or actual dispatch is supported. Desk selectors demonstrate contexts rather than authenticated staff roles. Server-only Piezas credentials protect the app connection, but this is not a production healthcare system. In-app notification polling is not an emergency alert channel. Mutations are serialized in the app's single hosting process; multi-replica operation would require durable concurrency safeguards.

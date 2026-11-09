@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { Piezas, createReportProblemRoute } from '@piezas/sdk';
 import { hospitals, resources, seedRequests, distance } from './dist/seed.js';
-import { hackathonRoutes } from './lib/hackathon.js';
+import { createReadiness } from './lib/readiness.js';
 import { noteHasSensitiveDetails } from './lib/coordination-note.js';
 import {eligibleHospitals} from './dist/request-utils.js';
 
@@ -90,21 +90,21 @@ function json(res, status, value) {
   res.writeHead(status, { 'Content-Type':'application/json', 'Cache-Control':'no-store' });
   res.end(JSON.stringify(value));
 }
-const hackathon=hackathonRoutes({piezas,testing,scope,serial,body,json,fail,
- async caseRequestStatus(tag,id){const r=await (await store()).get(id);if(!r.tags.includes(tag))fail(404,'Request not found.');return r.status;},
- async createCaseRequest(tag,c){
-  const client=await store(),rows=await records(tag),caseTag=`case-${c.recordId}`;
-  const prior=rows.find(r=>r.tags.includes(caseTag));if(prior)return decode(prior);
-  const number=Math.max(1042,...rows.map(r=>Number(r.data.displayId.slice(3))))+1;
-  const r={id:`HC-${number}`,hospitalId:c.hospitalId,resource:c.resource,urgency:c.assessment.priority,radiusKm:c.radiusKm,note:`Synthetic case ${c.id}. Resource coordination only; no patient identity shared.`,createdAt:Date.now(),status:'Awaiting responses',responses:[]};
-  await recordRouting(tag,r);
-  return decode(await client.create({...encode(r),tags:[tag,caseTag]}));
- }
-});
-async function recordRouting(tag,r){
- const ready=await hackathon.readiness(tag),states=Object.fromEntries(ready.facilities.map(h=>[h.id,h.state]));
+const readiness=createReadiness({piezas,testing});
+const emsDesk=id=>({type:'ems',agentId:`ems-${id}`,baseHospitalId:id,name:`${hospital(id).short} EMS desk`});
+function notifications(rows,base){
+ return rows.filter(r=>r.hospitalId===base&&r.acceptedHospitalId&&r.delivery?.acceptanceMode==='hospital-direct'&&Number.isFinite(r.delivery.acceptedAt)).map(r=>({
+  id:`acceptance-${r.recordId}`,requestId:r.id,recordId:r.recordId,hospitalId:r.acceptedHospitalId,hospitalName:hospital(r.acceptedHospitalId).name,acceptedAt:r.delivery.acceptedAt,readAt:r.delivery.notificationReadAt||null,status:r.status,
+ })).sort((a,b)=>b.acceptedAt-a.acceptedAt);
+}
+async function recordRouting(tag,r,targetHospitalId){
+ const ready=await readiness.get(tag),states=Object.fromEntries(ready.facilities.map(h=>[h.id,h.state]));
  const at=Date.now();
- r.delivery={source:'saved-at-send',recordedAt:at,recipientIds:eligibleHospitals(r,states).map(h=>h.id),events:[{action:'sent',hospitalId:r.hospitalId,at}]};
+ r.delivery={requester:emsDesk(r.hospitalId)};
+ const ids=eligibleHospitals(r,states).map(h=>h.id);
+ if(!ids.length)fail(409,'No open hospitals match this resource and radius. Change the search before sending.');
+ if(targetHospitalId&&!ids.includes(targetHospitalId))fail(409,'That hospital is not currently available for this resource and radius. Refresh and choose another.');
+ r.delivery={requester:emsDesk(r.hospitalId),source:'saved-at-send',recordedAt:at,recipientIds:targetHospitalId?[targetHospitalId]:ids,events:[{action:'sent',actorType:'ems',hospitalId:r.hospitalId,at}]};
  return r;
 }
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -123,7 +123,20 @@ http.createServer(async (req, res) => {
       if (Date.now()-rateStart>60000) { rateStart=Date.now(); writes=0; }
       if (++writes>120) fail(429,'The shared demo is busy. Please try again in a minute.');
     }
-    if (await hackathon.handle(req,res,url)) return;
+    if(url.pathname==='/workspace.html'){
+      res.writeHead(302,{Location:'/', 'Cache-Control':'no-store'});res.end();return;
+    }
+    if(url.pathname==='/api/readiness'&&req.method==='GET')return json(res,200,await readiness.get(scope(req,res)));
+    const facility=/^\/api\/readiness\/([a-z]+)$/.exec(url.pathname);
+    if(facility&&req.method==='POST'){
+      const tag=scope(req,res),input=await body(req);
+      if(!hospital(facility[1])||!['Open','Limited','Closed'].includes(input?.state))fail(400,'Choose a sample hospital and supported availability.');
+      return await serial(async()=>json(res,200,await readiness.set(tag,facility[1],input.state)));
+    }
+    if(url.pathname==='/api/notifications'&&req.method==='GET'){
+      const base=url.searchParams.get('emsBaseId');if(!hospital(base))fail(400,'Choose an EMS base.');
+      return json(res,200,{notifications:notifications((await records(scope(req,res))).map(decode),base)});
+    }
     if (url.pathname === '/api/piezas/report' && ['GET','POST'].includes(req.method)) {
       const input = req.method==='POST' ? JSON.stringify(await body(req,600000)) : undefined;
       const request=new Request(`http://${req.headers.host}${url.pathname}`,{method:req.method,headers:req.headers,body:input});
@@ -135,57 +148,63 @@ http.createServer(async (req, res) => {
       const tag = scope(req,res);
       return await serial(async () => {
         await ensureSeed(tag);
-        json(res,200,{requests:(await records(tag)).map(decode).sort((a,b)=>b.createdAt-a.createdAt)});
+        const rows=(await records(tag)).map(decode).sort((a,b)=>b.createdAt-a.createdAt),base=url.searchParams.get('emsBaseId');
+        if(base&&!hospital(base))fail(400,'Choose an EMS base.');
+        json(res,200,{requests:rows,notifications:base?notifications(rows,base):[]});
       });
     }
     if (url.pathname === '/api/requests' && req.method === 'POST') {
       const tag=scope(req,res), input=await body(req);
-      if (!hospital(input.hospitalId) || !resources.includes(input.resource) || !['Routine','Urgent','Critical'].includes(input.urgency) || !Number.isInteger(input.radiusKm) || input.radiusKm<1 || input.radiusKm>500 || typeof input.note!=='string' || input.note.length>500) fail(400,'Check the hospital, resource, urgency, radius and note.');
-      if (noteHasSensitiveDetails(input.note)) fail(400,'Remove personal names, health identifiers, contact information and clinical details. Use resource or timing information only.');
+      const base=input?.emsBaseId||input?.hospitalId;
+      if(!input||Object.keys(input).some(k=>!['emsBaseId','hospitalId','resource','urgency','radiusKm','note','targetHospitalId'].includes(k)))fail(400,'Use only resource coordination fields. Patient data is not accepted.');
+      if(!hospital(base)||(input.emsBaseId&&input.hospitalId&&input.emsBaseId!==input.hospitalId)||!resources.includes(input.resource)||!['Routine','Urgent','Critical'].includes(input.urgency)||!Number.isInteger(input.radiusKm)||input.radiusKm<1||input.radiusKm>500||typeof input.note!=='string'||input.note.length>500||(input.targetHospitalId&&!hospital(input.targetHospitalId)))fail(400,'Check the EMS base, resource, priority, radius and recipient.');
+      if(noteHasSensitiveDetails(input.note))fail(400,'Remove personal names, health identifiers, contact information and clinical details. Use resource or timing details only.');
       return await serial(async () => {
         await ensureSeed(tag);
         const rows=await records(tag);
         const number = Math.max(1042,...rows.map(r=>Number(r.data.displayId.slice(3))))+1;
-        const r={id:`HC-${number}`,hospitalId:input.hospitalId,resource:input.resource,urgency:input.urgency,radiusKm:input.radiusKm,note:input.note.trim(),createdAt:Date.now(),status:'Awaiting responses',responses:[]};
-        await recordRouting(tag,r);
+        const r={id:`HC-${number}`,hospitalId:base,resource:input.resource,urgency:input.urgency,radiusKm:input.radiusKm,note:input.note.trim(),createdAt:Date.now(),status:'Awaiting responses',responses:[]};
+        await recordRouting(tag,r,input.targetHospitalId);
         const saved=await (await store()).create({...encode(r),tags:[tag]});
         json(res,201,{request:decode(saved)});
       });
     }
-    const action=/^\/api\/requests\/([a-f0-9-]{36})\/(offer|accept|complete)$/.exec(url.pathname);
-    if (action && req.method==='POST') {
-      const tag=scope(req,res), input=await body(req);
-      if (!hospital(input.hospitalId)) fail(400,'Choose a sample hospital.');
-      return await serial(async () => {
-        const client=await store(), row=await client.get(action[1]);
-        if (!row.tags.includes(tag)) fail(404,'Request not found in this demo.');
-        const r=decode(row);
-        if (action[2]==='offer') {
-          const ready=await hackathon.readiness(tag);
-          if(ready.facilities.find(h=>h.id===input.hospitalId)?.state==='Closed')fail(409,'This sample facility is closed. Update readiness before offering capacity.');
-          if (Array.isArray(r.delivery?.recipientIds)&&!r.delivery.recipientIds.includes(input.hospitalId))fail(409,'This hospital was not included in the saved recipient list.');
-          if (r.status!=='Awaiting responses' || !matches(r,input.hospitalId) || r.responses.some(x=>x.hospitalId===input.hospitalId)) fail(409,'This hospital cannot offer again, or the request has changed. Refresh and try another request.');
-          if (!Number.isInteger(input.availabilityMinutes) || input.availabilityMinutes<1 || input.availabilityMinutes>10080) fail(400,'Enter an availability time between 1 and 10080 minutes.');
-          r.responses.push({hospitalId:input.hospitalId,availabilityMinutes:input.availabilityMinutes});
-        } else {
-          if (r.hospitalId!==input.hospitalId) fail(403,'Switch to the requesting sample hospital first.');
-          if (action[2]==='accept') {
-            if (r.status!=='Awaiting responses' || !r.responses.some(x=>x.hospitalId===input.acceptedHospitalId)) fail(409,'This response cannot be accepted. Refresh the request.');
-            const ready=await hackathon.readiness(tag);
-            if(ready.facilities.find(h=>h.id===input.acceptedHospitalId)?.state==='Closed')fail(409,'The responding facility is now closed. Refresh its availability before accepting.');
-            r.acceptedHospitalId=input.acceptedHospitalId; r.status='Accepted';
-          } else {
-            if (r.status!=='Accepted') fail(409,'Accept a response before completing this request.');
-            r.status='Completed';
+    const action=/^\/api\/requests\/([a-f0-9-]{36})\/(hospital-accept|complete|notification-read)$/.exec(url.pathname);
+    if(action&&req.method==='POST'){
+      const tag=scope(req,res),input=await body(req);
+      return await serial(async()=>{
+        const client=await store(),row=await client.get(action[1]);
+        if(row.entityTypeId!==client.getEntityTypeId()||!row.tags.includes(tag))fail(404,'Request not found.');
+        const r=decode(row),at=Date.now();
+        r.delivery??={source:'legacy',recipientIds:null,recordedAt:null,events:[]};
+        if(action[2]==='hospital-accept'){
+          if(!hospital(input?.hospitalId))fail(400,'Choose a receiving hospital.');
+          if(r.status!=='Awaiting responses')fail(409,`This request is already ${r.status.toLowerCase()}${r.acceptedHospitalId?' by '+hospital(r.acceptedHospitalId).name:''}. Refresh to see the latest decision.`);
+          const ready=await readiness.get(tag),states=Object.fromEntries(ready.facilities.map(h=>[h.id,h.state]));
+          if(states[input.hospitalId]==='Closed')fail(409,'This hospital is closed. Update availability before accepting.');
+          const recipients=Array.isArray(r.delivery.recipientIds)?r.delivery.recipientIds:eligibleHospitals(r,states).map(h=>h.id);
+          if(!recipients.includes(input.hospitalId)||!eligibleHospitals(r,states).some(h=>h.id===input.hospitalId))fail(409,'This hospital is not an eligible recipient of this request.');
+          r.acceptedHospitalId=input.hospitalId;r.status='Accepted';
+          r.delivery.acceptanceMode='hospital-direct';r.delivery.acceptedAt=at;r.delivery.notificationReadAt=null;
+          if(!r.responses.some(x=>x.hospitalId===input.hospitalId))r.responses.push({hospitalId:input.hospitalId,availabilityMinutes:0,acceptedAt:at});
+          r.delivery.events.push({action:'hospital-accepted',actorType:'hospital',hospitalId:input.hospitalId,destinationId:input.hospitalId,at});
+        }else{
+          if(!hospital(input?.emsBaseId)||input.emsBaseId!==r.hospitalId)fail(403,'Only the requesting EMS desk can update this request.');
+          if(action[2]==='notification-read'){
+            if(r.delivery.acceptanceMode!=='hospital-direct'||!r.delivery.acceptedAt)fail(409,'There is no acceptance notification to mark read.');
+            r.delivery.notificationReadAt??=at;
+          }else{
+            if(r.status!=='Accepted')fail(409,'Only an accepted request can be marked completed.');
+            r.status='Completed';r.delivery.events.push({action:'completed',actorType:'ems',hospitalId:r.hospitalId,at});
           }
         }
-        r.delivery??={source:'legacy',recipientIds:null,recordedAt:null,events:[]};
-        r.delivery.events.push({action:action[2]==='offer'?'responded':action[2]==='accept'?'accepted':'completed',hospitalId:input.hospitalId,...(action[2]==='accept'?{destinationId:input.acceptedHospitalId}:{}),at:Date.now()});
-        json(res,200,{request:decode(await client.update(row.id,encode(r)))});
+        const saved=decode(await client.update(row.id,encode(r)));
+        json(res,200,{request:saved,notification:notifications([saved],saved.hospitalId)[0]||null});
       });
     }
+    if(url.pathname.startsWith('/api/'))fail(404,'That feature is not part of the current EMS workflow.');
     if (!['GET','HEAD'].includes(req.method)) fail(405,'That action is not supported.');
-    const files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/requests.html':'network.html','/overview.js':'overview.js','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/styles.css':'styles.css','/report-widget.js':'report-widget.js','/workspace.html':'workspace.html','/workspace.js':'workspace.js','/workspace.css':'workspace.css','/hackathon-data.js':'hackathon-data.js','/submission-data.js':'submission-data.js','/submission/problem-summary.pdf':'submission/problem-summary.pdf','/submission/pitch-script.pdf':'submission/pitch-script.pdf','/submission/pitch-slides.pptx':'submission/pitch-slides.pptx','/submission/requirements.md':'submission/requirements.md'};
+    const files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/requests.html':'network.html','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/core.css':'core.css','/workspace.css':'workspace.css','/report-widget.js':'report-widget.js'};
     const file=files[url.pathname];
     if (!file) fail(404,'Page not found.');
     const data=await readFile(path.join(root,file));

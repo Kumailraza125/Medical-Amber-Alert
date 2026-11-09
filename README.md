@@ -1,33 +1,33 @@
 # Hospital Connect
 
-A Piezas-backed hackathon demo for coordinating resources between fictional hospitals in British Columbia.
+A Piezas-backed EMS-to-hospital coordination demo.
 
-- [Live app](https://hospital-connect-2179.apps.piezas.ai)
-- [Dispatch workspace](https://hospital-connect-2179.apps.piezas.ai/workspace.html)
-- [Hackathon submission](https://hospital-connect-2179.apps.piezas.ai/workspace.html?view=submission)
+1. An EMS agent sends a resource request to a hospital or all matching nearby hospitals.
+2. A receiving hospital accepts directly. The first valid acceptance wins.
+3. EMS sees an automatic in-app notification naming the accepting hospital and acceptance time.
 
-The dashboard summary cards open dedicated request views, and the nearby panel opens an interactive BC map with hospital selection and availability filters. Hospital markers remain fictional.
+[Live app](https://hospital-connect-2179.apps.piezas.ai) · [BC map](https://hospital-connect-2179.apps.piezas.ai/network.html)
 
-The demo includes synthetic patient intake, explained screening rules, facility and crew readiness, resource requests and responses, duplicate-data review, CSV/JSON imports, CSV/JSON/Excel exports, and no-charge worker-payment approval. The submission screen provides a one-page problem summary, a three-minute pitch, slides, assumptions and requirement mapping.
+The app now keeps only the EMS desk, Hospital desk, hospital availability, request tracking, acceptance notifications, and supporting map/ledgers. Screening, patient-data tools, worker payments and hackathon submission screens are retired. Historical source and checks remain in `docs/archive`; saved Piezas records are retained.
 
-All identities and hospital information are fictional. Screening is illustrative rule logic, not trained clinical AI. Payments are simulations. The team has not conducted the required user interview yet. This shared public demo must not hold real patient information.
+## Run locally
 
-## Development
+Requires Node.js 22+ and npm. Run `npm ci`, configure server-only settings using `.env.example`, then run `npm run build` and `npm run dev`. The local app listens on port 3100. Keep `.env` private and use a separate Piezas test app for `PIEZAS_TEST_API_KEY`.
 
-Requires Node.js 22+ and npm. Install with `npm ci`, configure server-only settings using `.env.example`, then run `npm run build` and `npm run dev`. The local app listens on port 3100. Keep `.env` private; use a separate Piezas test app for `PIEZAS_TEST_API_KEY`.
+Open the EMS desk in one browser and `/?role=hospital&hospital=maple` in another. Send an MRI request from the Cedar Valley base and accept it at Maplewood. The visible EMS page checks for saved updates approximately every four seconds and when focus returns. Notifications and read state are stored in Piezas; no external email, SMS or browser-push message is sent.
 
-`npm run build` creates the deployable server and public assets in `runtime/`. Generated build output, dependencies and local Piezas account state are excluded from Git.
-
-## Validation
-
-Run the browser checks against the separate test app:
+## Checks and deployment
 
 ```sh
-PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3101 npx piezas test
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3130 npx piezas test
 ```
 
-If using Playwright's downloaded Chromium, omit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Install it with `npx playwright install chromium` if needed. The current feature set has 23 checked journeys.
+If using Playwright's downloaded Chromium, omit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. The current acceptance contract is in `SPEC.md`; S-024–S-033 cover the simplified core workflow. The owner explicitly replaced the prior workflow, so earlier feature checks are archived rather than silently redefined.
 
-See [HOSPITAL_CONNECT.md](HOSPITAL_CONNECT.md) for the workflow and limitations, [SPEC.md](SPEC.md) for acceptance cases, and [docs/HACKATHON_REQUIREMENTS.md](docs/HACKATHON_REQUIREMENTS.md) for the third-option requirement mapping.
+`npm run build` creates a clean `runtime/` containing only core server and public assets. Dependencies, generated builds, local credentials and Piezas account state are excluded from Git. Run the quality scan and then the acceptance checks before publishing.
 
-The checked-in submission downloads can be regenerated with `python docs/generate-submission.py` when ReportLab and python-pptx are installed. Regeneration uses Liberation Sans from `/usr/share/fonts/truetype/liberation/`.
+## Limits
+
+This is a shared public demo. Desk selectors are not authentication; do not enter real patient data. Hospital identities, locations, resources and capacity are examples. BC geography is real. Notifications are in-app and depend on the app being open or reopened. No live clinical capacity, road routing, real emergency dispatch, payments or clinical screening is provided.
+
+See [HOSPITAL_CONNECT.md](HOSPITAL_CONNECT.md), [SPEC.md](SPEC.md) and [map source notes](docs/MAP_SOURCES.md).

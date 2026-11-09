@@ -1,7 +1,8 @@
 import {build} from 'esbuild';
-import {cp,mkdir,writeFile} from 'node:fs/promises';
+import {cp,mkdir,writeFile,rm} from 'node:fs/promises';
+await rm('runtime',{recursive:true,force:true});
 await mkdir('runtime/public',{recursive:true});
-await cp('dist','runtime/public',{recursive:true});
+for(const file of ['index.html','app.js','core.css','workspace.css','seed.js','request-utils.js','network.html','overview.css','map-attribution.txt'])await cp('dist/'+file,'runtime/public/'+file);
 await build({entryPoints:['server.js'],outfile:'runtime/server.js',bundle:true,platform:'node',format:'esm',target:'node22',packages:'bundle'});
 await build({entryPoints:['scripts/report-widget.js'],outfile:'runtime/public/report-widget.js',bundle:true,platform:'browser',format:'esm',target:'es2022'});
 await cp('runtime/public/report-widget.js','dist/report-widget.js');
