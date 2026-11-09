@@ -92,3 +92,6 @@ Shared demo selectors are not authentication. Use sample data only. Actual staff
 
 ## Scope history
 Previous scenario IDs S-001–S-023 and the preceding specification were archived under docs/archive because the owner explicitly replaced that workflow and removed non-core features. Current tests have new IDs rather than silently reinterpreting earlier passed checks.
+
+## Owner-approved interface refinement — 2026-11-09
+Simplify the existing core desks and map without changing their workflow. Keep one prominent disclaimer per page covering example data, public role switching, no patient information and no real dispatch. Remove repeated demo/fictional/sample wording from controls and details. Use a clearer visual hierarchy, compact status summary, prominent request form, concise notifications and consistent responsive navigation. Existing S-024–S-033 cover retained behaviour; this is a presentation refinement of those requirements.
