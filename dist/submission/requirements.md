@@ -32,3 +32,7 @@ S-001 through S-009 cover the existing coordination workflow, phone layout, pers
 ## Outstanding required evidence
 
 The owner confirmed that the team has not spoken to anyone yet. The official third option asks for at least one real person with this problem. An interview is still required; secondary news and team assumptions do not satisfy it.
+
+## BC map and dashboard follow-up
+
+The nearby-hospital panel and each dashboard summary card are now navigation links. The full BC map supports hospital selection, availability/resource/radius filters, and a local-geography fallback when optional street tiles are unavailable. Existing hospital locations and capacity remain invented; no real dispatch is sent. Active/incoming/completed ledgers show sender, routing information, offers and accepted destination. New requests save their recipient list and action history; older requests explicitly distinguish current eligible matches from missing historical routing. Checks S-020 through S-023 cover this follow-up. See MAP_SOURCES.md for map licences and implementation details.

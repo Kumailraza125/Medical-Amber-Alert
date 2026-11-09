@@ -9,3 +9,6 @@ playwright-report/
 
 runtime/
 dist/report-widget.js
+
+dist/map-bundle.js
+dist/map-bundle.css

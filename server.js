@@ -8,6 +8,7 @@ import { Piezas, createReportProblemRoute } from '@piezas/sdk';
 import { hospitals, resources, seedRequests, distance } from './dist/seed.js';
 import { hackathonRoutes } from './lib/hackathon.js';
 import { noteHasSensitiveDetails } from './lib/coordination-note.js';
+import {eligibleHospitals} from './dist/request-utils.js';
 
 const testing = process.argv.includes('--test');
 const apiKey = testing ? process.env.PIEZAS_TEST_API_KEY : process.env.PIEZAS_API_KEY;
@@ -17,12 +18,20 @@ const reports = createReportProblemRoute({ piezas });
 const entitySlug = testing ? 'hospital_connect_test_demo_request' : 'hospital_connect_shared_demo_request';
 let storePromise;
 function store() {
-  if (!storePromise) storePromise = piezas.defineEntities({ [entitySlug]: { fields: {
-    displayId: {type:'text',required:true}, hospitalId:{type:'text',required:true},
-    resource:{type:'select',options:resources,required:true}, urgency:{type:'select',options:['Routine','Urgent','Critical'],required:true},
-    radiusKm:{type:'integer',required:true}, note:{type:'longtext'}, createdAt:{type:'number',required:true},
-    responses:{type:'longtext',required:true}, acceptedHospitalId:{type:'text'},
-  } } }).then(x => x[entitySlug]).catch(e => { storePromise = undefined; throw e; });
+  if (!storePromise) storePromise = (async()=>{
+    // Add optional routing metadata without rewriting existing request values.
+    const prior=(await piezas.entities.listSchemas()).find(s=>s.slug===entitySlug);
+    if(prior&&!prior.jsonSchema?.properties?.delivery){
+      await piezas.entities.updateSchema(prior.id,{jsonSchema:{...prior.jsonSchema,properties:{...prior.jsonSchema.properties,delivery:{type:'string'}}}});
+    }
+    const definitions={fields:{
+      displayId:{type:'text',required:true},hospitalId:{type:'text',required:true},
+      resource:{type:'select',options:resources,required:true},urgency:{type:'select',options:['Routine','Urgent','Critical'],required:true},
+      radiusKm:{type:'integer',required:true},note:{type:'longtext'},createdAt:{type:'number',required:true},
+      responses:{type:'longtext',required:true},acceptedHospitalId:{type:'text'},delivery:{type:'longtext'},
+    }};
+    return (await piezas.defineEntities({[entitySlug]:definitions}))[entitySlug];
+  })().catch(e=>{storePromise=undefined;throw e;});
   return storePromise;
 }
 const hospital = id => hospitals.find(h => h.id === id);
@@ -36,10 +45,10 @@ function scope(req, res) {
   if (!value) res.setHeader('Set-Cookie', `hc_test=${id}; Path=/; HttpOnly; SameSite=Strict`);
   return testPrefix + id;
 }
-const decode = r => ({ ...r.data, id:r.data.displayId, status:r.status, responses:JSON.parse(r.data.responses || '[]'), recordId:r.id });
+const decode = r => ({ ...r.data, id:r.data.displayId, status:r.status, responses:JSON.parse(r.data.responses || '[]'), delivery:r.data.delivery?JSON.parse(r.data.delivery):null, recordId:r.id });
 function encode(r) {
-  const { id, recordId, status, ...data } = r;
-  return { title:id, status, data:{ ...data, displayId:id, responses:JSON.stringify(r.responses) } };
+  const { id, recordId, status, delivery, ...data } = r;
+  return { title:id, status, data:{ ...data, displayId:id, responses:JSON.stringify(r.responses),...(r.delivery?{delivery:JSON.stringify(r.delivery)}:{}) } };
 }
 async function records(tag) {
   const client = await store(), all = [];
@@ -88,9 +97,16 @@ const hackathon=hackathonRoutes({piezas,testing,scope,serial,body,json,fail,
   const prior=rows.find(r=>r.tags.includes(caseTag));if(prior)return decode(prior);
   const number=Math.max(1042,...rows.map(r=>Number(r.data.displayId.slice(3))))+1;
   const r={id:`HC-${number}`,hospitalId:c.hospitalId,resource:c.resource,urgency:c.assessment.priority,radiusKm:c.radiusKm,note:`Synthetic case ${c.id}. Resource coordination only; no patient identity shared.`,createdAt:Date.now(),status:'Awaiting responses',responses:[]};
+  await recordRouting(tag,r);
   return decode(await client.create({...encode(r),tags:[tag,caseTag]}));
  }
 });
+async function recordRouting(tag,r){
+ const ready=await hackathon.readiness(tag),states=Object.fromEntries(ready.facilities.map(h=>[h.id,h.state]));
+ const at=Date.now();
+ r.delivery={source:'saved-at-send',recordedAt:at,recipientIds:eligibleHospitals(r,states).map(h=>h.id),events:[{action:'sent',hospitalId:r.hospitalId,at}]};
+ return r;
+}
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, existsSync(path.join(here,'public')) ? 'public' : 'dist');
 const args=process.argv.slice(2), index=args.indexOf('--port');
@@ -131,6 +147,7 @@ http.createServer(async (req, res) => {
         const rows=await records(tag);
         const number = Math.max(1042,...rows.map(r=>Number(r.data.displayId.slice(3))))+1;
         const r={id:`HC-${number}`,hospitalId:input.hospitalId,resource:input.resource,urgency:input.urgency,radiusKm:input.radiusKm,note:input.note.trim(),createdAt:Date.now(),status:'Awaiting responses',responses:[]};
+        await recordRouting(tag,r);
         const saved=await (await store()).create({...encode(r),tags:[tag]});
         json(res,201,{request:decode(saved)});
       });
@@ -146,6 +163,7 @@ http.createServer(async (req, res) => {
         if (action[2]==='offer') {
           const ready=await hackathon.readiness(tag);
           if(ready.facilities.find(h=>h.id===input.hospitalId)?.state==='Closed')fail(409,'This sample facility is closed. Update readiness before offering capacity.');
+          if (Array.isArray(r.delivery?.recipientIds)&&!r.delivery.recipientIds.includes(input.hospitalId))fail(409,'This hospital was not included in the saved recipient list.');
           if (r.status!=='Awaiting responses' || !matches(r,input.hospitalId) || r.responses.some(x=>x.hospitalId===input.hospitalId)) fail(409,'This hospital cannot offer again, or the request has changed. Refresh and try another request.');
           if (!Number.isInteger(input.availabilityMinutes) || input.availabilityMinutes<1 || input.availabilityMinutes>10080) fail(400,'Enter an availability time between 1 and 10080 minutes.');
           r.responses.push({hospitalId:input.hospitalId,availabilityMinutes:input.availabilityMinutes});
@@ -153,21 +171,25 @@ http.createServer(async (req, res) => {
           if (r.hospitalId!==input.hospitalId) fail(403,'Switch to the requesting sample hospital first.');
           if (action[2]==='accept') {
             if (r.status!=='Awaiting responses' || !r.responses.some(x=>x.hospitalId===input.acceptedHospitalId)) fail(409,'This response cannot be accepted. Refresh the request.');
+            const ready=await hackathon.readiness(tag);
+            if(ready.facilities.find(h=>h.id===input.acceptedHospitalId)?.state==='Closed')fail(409,'The responding facility is now closed. Refresh its availability before accepting.');
             r.acceptedHospitalId=input.acceptedHospitalId; r.status='Accepted';
           } else {
             if (r.status!=='Accepted') fail(409,'Accept a response before completing this request.');
             r.status='Completed';
           }
         }
+        r.delivery??={source:'legacy',recipientIds:null,recordedAt:null,events:[]};
+        r.delivery.events.push({action:action[2]==='offer'?'responded':action[2]==='accept'?'accepted':'completed',hospitalId:input.hospitalId,...(action[2]==='accept'?{destinationId:input.acceptedHospitalId}:{}),at:Date.now()});
         json(res,200,{request:decode(await client.update(row.id,encode(r)))});
       });
     }
     if (!['GET','HEAD'].includes(req.method)) fail(405,'That action is not supported.');
-    const files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/seed.js':'seed.js','/styles.css':'styles.css','/report-widget.js':'report-widget.js','/workspace.html':'workspace.html','/workspace.js':'workspace.js','/workspace.css':'workspace.css','/hackathon-data.js':'hackathon-data.js','/submission-data.js':'submission-data.js','/submission/problem-summary.pdf':'submission/problem-summary.pdf','/submission/pitch-script.pdf':'submission/pitch-script.pdf','/submission/pitch-slides.pptx':'submission/pitch-slides.pptx','/submission/requirements.md':'submission/requirements.md'};
+    const files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/requests.html':'network.html','/overview.js':'overview.js','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/styles.css':'styles.css','/report-widget.js':'report-widget.js','/workspace.html':'workspace.html','/workspace.js':'workspace.js','/workspace.css':'workspace.css','/hackathon-data.js':'hackathon-data.js','/submission-data.js':'submission-data.js','/submission/problem-summary.pdf':'submission/problem-summary.pdf','/submission/pitch-script.pdf':'submission/pitch-script.pdf','/submission/pitch-slides.pptx':'submission/pitch-slides.pptx','/submission/requirements.md':'submission/requirements.md'};
     const file=files[url.pathname];
     if (!file) fail(404,'Page not found.');
     const data=await readFile(path.join(root,file));
-    res.writeHead(200,{'Content-Type':({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.pdf':'application/pdf','.pptx':'application/vnd.openxmlformats-officedocument.presentationml.presentation','.md':'text/plain; charset=utf-8'})[path.extname(file)],'Cache-Control':'no-cache'});
+    res.writeHead(200,{'Content-Type':({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.pdf':'application/pdf','.pptx':'application/vnd.openxmlformats-officedocument.presentationml.presentation','.md':'text/plain; charset=utf-8','.txt':'text/plain; charset=utf-8'})[path.extname(file)],'Cache-Control':'no-cache'});
     res.end(req.method==='HEAD' ? undefined : data);
   } catch (e) {
     const status=e.userFacing ? e.status : 503;

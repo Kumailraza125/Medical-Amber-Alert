@@ -29,6 +29,11 @@ Hospital staff can simulate any sample hospital. They create a request, switch t
 - R-015: Demonstrate worker-payment approval and a provider handoff, clearly distinguishing a simulation from an externally verified payment. Owner explicitly chose the no-charge payment demo. Real payment processing remains out of scope. [Stated payment idea; platform gap]
 - R-016: Provide the Build Your Own case answers, a one-page problem summary, assumptions, three-minute pitch, judge demo script and evidence status. Never invent an interview. [Stated, Hackathon Launch.pptx]
 
+## Map and dashboard navigation update
+- R-017: Open a dedicated interactive BC geography map from the nearby panel and hospital card, select hospital markers/list items, show availability/resources/update time, and filter by resource, status and radius. Hospital pins remain the existing fictional network; real capacity and actual dispatch are out of scope. A local BC boundary remains usable if street tiles fail. [Stated, owner screenshot suggestions; geography/demo separation assumed]
+- R-018: Each dashboard summary card opens a dedicated view for active requests, awaiting incoming requests, nearby hospitals or completed requests. Show sender, recipient hospitals, responses and accepted destination, with links to details and back navigation. [Stated, screenshot bug report]
+- R-019: Save recipient eligibility at send time plus response/accept/completion history for new requests, and distinguish it from current eligible matches on older requests. No external notification or crew dispatch is claimed. [Stated need to see who received/accepted; historical distinction assumed]
+
 ## Data
 - Hospital: id, name, town, coordinates, resources, sample contact
 - Request: id, hospitalId, resource, urgency, radiusKm, note, createdAt, status, acceptedHospitalId
@@ -152,6 +157,30 @@ Given a visitor downloads the generated CSV dataset
 When they import that CSV then submit a version with an altered health identifier
 Then five synthetic cases are saved and the altered file is rejected without adding cases
 
+### S-020: Open the BC map and inspect a hospital
+covers: R-017
+Given the dashboard shows its nearby-hospital panel
+When a visitor opens the map and selects Maplewood by its marker
+Then the selected hospital panel shows its location, resources, availability and example-data notice
+
+### S-021: Open every dashboard summary and see request routing
+covers: R-018
+Given the dashboard opens for Cedar Valley
+When a visitor opens Active, Incoming, Nearby and Completed cards
+Then each dedicated page shows the corresponding records and the completed MRI or ICU record names its accepted hospital
+
+### S-022: Preserve recipients and explain who accepted a request
+covers: R-019
+Given Maplewood is closed when Cedar Valley sends an MRI request
+When the visitor opens that request then reopens Maplewood
+Then the saved recipient list excludes Maplewood even though it is currently eligible, and it cannot respond to a request it was not sent
+
+### S-023: Filter map availability and use the map without street tiles
+covers: R-017
+Given Maplewood is closed and the map uses its local BC outline
+When a visitor filters to MRI hospitals with Closed availability and selects Maplewood from the list
+Then Maplewood is selectable, open hospitals are excluded, the details show Closed and the page fits a phone screen
+
 ## Edge cases
 No matching hospitals produces an honest empty state; offers require a positive availability time; closed requests reject further offers; only the requesting hospital can accept or complete. Invalid resource and radius values are rejected. Notes are displayed as text, never executed as HTML.
 
@@ -165,7 +194,7 @@ Confirmed description → interactive sample-data mock → owner chose shared de
 The uploaded PDF mixes brainstorming, proposed features and GitHub instructions. Its GitHub commands are reference content, not an instruction to publish source or create a repository. The launch deck requires fake data, a live app, a one-page summary, a three-minute pitch, explicit assumptions and a real interview. The owner confirmed no one has been interviewed yet. Their starting belief is that BC, especially rural communities, has a medical staff shortage. The interview evidence requirement remains open until a real interview is conducted. News links are secondary sources and do not substitute for the interview.
 The shared public demo cannot claim real staff access control or healthcare compliance. Only generated fake identities are accepted by the new intake/import endpoints. Older public request notes use conservative checks for common identifiers, proper-name patterns, contact details and clinical labels. These checks are accident prevention, not a guarantee: a shared free-text field must still never contain real patient data. HTTPS hosting and server-only credentials protect transport and keys; a private production version needs authenticated roles, access logging, retention, security review and clinical governance. Screening is deterministic demo workflow logic, not an AI model or a clinically validated triage system. Payment processing is not available in Piezas; a simulated approval flow or owner-supplied provider test checkout is required.
 
-Sample geography and straight-line distances illustrate the radius; travel times are not calculated. Offers are manually entered, with no actual capacity guarantees. No external services are needed for the demo.
+Sample geography and straight-line distances illustrate the radius; travel times are not calculated. Offers are manually entered, with no actual capacity guarantees. Optional OpenStreetMap street tiles provide geographic context; a bundled BC outline keeps the interactive hospital layer usable without tiles. No road-routing or real capacity service is used.
 
 ## Open Conflicts
 none

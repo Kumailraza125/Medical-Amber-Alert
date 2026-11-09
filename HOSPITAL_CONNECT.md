@@ -25,3 +25,7 @@ Hospital resources and coordinates are fictional; radius matching uses straight-
 Open `/workspace.html` for synthetic case intake, explained demo screening, facility and crew readiness, duplicate-data review, CSV/JSON/XLSX dataset exports, validated CSV/JSON import and no-charge worker-payment approval. The Submission tab includes the third-option case answers and downloadable summary, pitch script and slides. `python docs/generate-submission.py` regenerates the handoff files; it requires ReportLab and python-pptx. The normal build copies the checked-in deliverable assets and needs no Python.
 
 The owner confirmed no interview has happened yet. That judging requirement remains outstanding. Screening is deterministic illustrative logic, not trained clinical AI. Payments are a no-charge demonstration, as chosen by the owner. No real clinical dataset, live payment gateway or real staff accounts are used.
+
+## BC map and request overview
+
+Open `/network.html` for the interactive map or use the dashboard's nearby panel. The BC geography is real; the hospital network and capacity remain fictional. Each dashboard card opens a dedicated active/incoming/nearby/completed view. Request details now distinguish saved recipient snapshots from current matches and show saved response, acceptance and completion events. See `docs/MAP_SOURCES.md` for licences, fallback behaviour and data semantics.

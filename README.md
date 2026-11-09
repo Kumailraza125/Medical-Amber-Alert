@@ -6,6 +6,8 @@ A Piezas-backed hackathon demo for coordinating resources between fictional hosp
 - [Dispatch workspace](https://hospital-connect-2179.apps.piezas.ai/workspace.html)
 - [Hackathon submission](https://hospital-connect-2179.apps.piezas.ai/workspace.html?view=submission)
 
+The dashboard summary cards open dedicated request views, and the nearby panel opens an interactive BC map with hospital selection and availability filters. Hospital markers remain fictional.
+
 The demo includes synthetic patient intake, explained screening rules, facility and crew readiness, resource requests and responses, duplicate-data review, CSV/JSON imports, CSV/JSON/Excel exports, and no-charge worker-payment approval. The submission screen provides a one-page problem summary, a three-minute pitch, slides, assumptions and requirement mapping.
 
 All identities and hospital information are fictional. Screening is illustrative rule logic, not trained clinical AI. Payments are simulations. The team has not conducted the required user interview yet. This shared public demo must not hold real patient information.
@@ -24,7 +26,7 @@ Run the browser checks against the separate test app:
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3101 npx piezas test
 ```
 
-If using Playwright's downloaded Chromium, omit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Install it with `npx playwright install chromium` if needed. The current feature set has 19 checked journeys.
+If using Playwright's downloaded Chromium, omit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Install it with `npx playwright install chromium` if needed. The current feature set has 23 checked journeys.
 
 See [HOSPITAL_CONNECT.md](HOSPITAL_CONNECT.md) for the workflow and limitations, [SPEC.md](SPEC.md) for acceptance cases, and [docs/HACKATHON_REQUIREMENTS.md](docs/HACKATHON_REQUIREMENTS.md) for the third-option requirement mapping.
 
