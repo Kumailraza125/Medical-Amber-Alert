@@ -10,14 +10,16 @@ Piezas users service owns credentials and signed sessions. Cookies are HttpOnly 
 - R-042: Real Piezas-managed sign-in/sign-out and MFA-challenge handling; verified service sessions determine server-side permissions. Samples are labelled as public example identities, not verified healthcare workers. Invalid, anonymous and disabled users cannot access coordination records.
 - R-043: Sample access registration collects a display name, DEMO employee number, sample email and requested role/facility. The administrator must review and approve or reject it. Request fields never grant privileges. No actual employee verification integration or email to real people is provided.
 - R-044: Requests show Submitted, Under review, Awaiting response, Accepted and Completed stages. The EMS coordinator and reviewing hospital member are identified from their sessions. Another approved member of the same hospital can take over a pending review only with a recorded reason; the previous reviewer then loses authority to make its review decision. Required resource/priority/radius fields are validated; medical decisions stay with qualified staff in a future real deployment. Notes remain non-clinical examples.
-- R-045: Hospital availability shows update time and updating staff. Review and explicit resource confirmation are required before acceptance. Saving newer availability invalidates old confirmation. EMS must confirm transfer arrangements against the current availability before completion; the app does not independently confirm arrival or direct an ambulance.
-- R-046: A fictional facility preference is recorded separately from routing. Hospital review records suitability/trade-offs if accepting a different facility. EMS can request another option after acceptance without silently deleting the existing acceptance; hospital staff record a reasoned response before transfer can be confirmed.
+- R-045: Hospital availability shows update time and updating staff. One direct acceptance action records review ownership, explicit resource confirmation and a required team-confirmed receiving time (now, 15, 30 or 60 minutes). An unpublished Open/Limited availability is published with a valid acceptance; stale, paused or Closed availability is rejected. Saving newer availability invalidates old confirmation. EMS must confirm transfer arrangements against the current availability before completion; the app does not independently confirm arrival or direct an ambulance.
+- R-046: Facility preferences and general written coordination are removed from the active UI and new submissions. Historical values remain in Piezas. Staff can resolve outstanding historical coordination by an explicit direct-contact acknowledgment before accepting or reconfirming.
 - R-047: Configurable SAMPLE workflow response targets and backup contact are shown. Unanswered requests can be escalated with a reason and recorded timestamp. Escalation does not send email, SMS or emergency dispatch. A service failure tells staff to use their established offline process. No 24/7 staffing or clinically safe waiting time is claimed.
 - R-048: Requests remain in Piezas until a sample administrator explicitly deletes them using their reference and reason. Deletion does not recreate seed records. Minimal deletion/audit metadata remains for the project lifetime. No automatic purging, provider backup erasure or production-compliant retention is claimed. Real retention/legal/privacy approval remains required before any real-patient use.
 - R-049: BC map stays standalone and has NO About Us link. It uses authenticated availability. Public About Us retains Lee’s interview credit, the interview-paper wording, William Yeung’s name and the reported 12-hour, 3–6-hour, 16-hour and 1–2-hour details without invented quotes; the original logo and diagram remain; operational data routes require approved sample staff access. Responsive interface fits a phone.
 - R-050: Acceptance notifications retain accepting hospital, time and read state. First valid accepting hospital wins. All workflow actions and reasons have server-derived staff identity/time, with least-privilege checks on every read/write.
 
 - R-051: One shared sign-in form serves all staff; verified assignments determine the workspace. Built-in sample accounts retain fixed roles and facilities, with approved sample misassignments repaired and recorded; suspended or rejected access remains blocked. Custom staff assignment controls remain available. Hospital receiving activation persists in Piezas, blocks new routing while paused, and shows incoming EMS requests automatically. The nine listed resource types replace Emergency beds for new requests; old records remain readable.
+
+- R-052: The urgent request view shows resource, priority, current state and one primary next action. Facility preference and the generic reason/reply box are absent. Exceptions (escalation and reasoned review takeover), recipients, backup and history are secondary disclosures. A receiving time is an operational estimate, not a triage recommendation, safe waiting period or appointment booking. Hospital pending queues sort Critical before Urgent, then oldest first. Responsive screens keep labels, focus and large touch targets clear.
 
 ## Architecture
 Use the published Piezas SDK: users service for credentials/sessions, entity records for staff approvals, policy, audit, readiness and requests. No local business database, hand-written authentication provider or passwords in entity records. The SDK derives users-service routing from the existing required PIEZAS_API_URL. Existing example requests are retained; no automatic mass deletion or seed recreation. App process serializes mutations; multiple replicas would need durable concurrency controls.
@@ -41,18 +43,6 @@ Given EMS and hospital staff have different assignments
 When they read or change requests belonging to another base or unrelated hospital
 Then unauthorized reads return not found and unauthorized writes fail without changing records
 
-### S-045: Review and reconfirm availability before a transfer
-covers: R-044, R-045
-Given EMS submits a request and hospital staff start reviewing it
-When availability is published, acceptance is confirmed and EMS confirms transfer arrangements
-Then stages and responsible staff are recorded, stale or missing confirmations fail, and completion retains hospital and history
-
-### S-046: Review a preference or another option without losing acceptance
-covers: R-046, R-050
-Given a request names a preferred facility
-When another hospital accepts and EMS requests another option
-Then a trade-off explanation is required, original acceptance remains, and hospital staff must record a response before transfer confirmation
-
 ### S-047: Escalate unanswered requests using the configured backup process
 covers: R-047
 Given a sample response target and backup contact are configured
@@ -70,12 +60,6 @@ covers: R-049
 Given approved sample staff opens BC map or a public About Us page
 When they inspect navigation and select a hospital on a phone
 Then the map has neither request tabs nor About Us, the logo and map work, About Us remains available elsewhere, and no horizontal overflow occurs
-
-### S-050: Request missing coordination details and retain accountability
-covers: R-044, R-050
-Given hospital staff claimed review of a submitted request
-When hospital staff request timing details and EMS replies
-Then Awaiting response returns to Under review with named staff, reasons and timestamps; sensitive notes and missing required inputs are rejected
 
 ### S-051: Accept once and notify the requesting EMS desk
 covers: R-050, R-045
@@ -101,12 +85,6 @@ Given a new sample employee requested hospital access
 When the administrator verifies their invented number, sets a backup policy and approves the role on screen, and the employee takes over a review with a reason
 Then the assigned employee can review that hospital’s request, the saved target and backup apply, and suspending them on screen removes their access
 
-### S-055: Review a requested alternative through the hospital interface
-covers: R-046, R-045, R-050
-Given a request has a preferred facility and a confirmed acceptance
-When EMS requests another option and hospital staff record a response using their visible controls
-Then the preference and reasons are shown, transfer is blocked until the review finishes, and the original acceptance and history remain
-
 ### S-056: Find a simple, visual staff sign-in page
 covers: R-042, R-043
 Given a visitor opens staff sign-in on desktop or phone
@@ -125,12 +103,6 @@ Given hospital staff can activate or pause receiving new EMS requests
 When EMS sends a matching request after activation
 Then it appears automatically with an incoming notice, hospital acceptance notifies the requesting EMS desk, pausing blocks new routing and acceptance without hiding existing requests, and another hospital or EMS cannot change the switch
 
-### S-060: Confirm the availability actually shown during review
-covers: R-045, R-051
-Given hospital staff have checked capacity confirmation in an open request
-When another session changes availability
-Then the earlier confirmation cannot accept the newer version, the displayed availability refreshes and the checkbox resets, and staff must confirm the new version explicitly
-
 ### S-061: Keep older pending requests visible after receiving is paused
 covers: R-049, R-051
 Given a historical pending request has no saved recipient list
@@ -143,7 +115,39 @@ Given everyone uses one email-and-password sign-in form without role-selection b
 When each sample account signs in
 Then Dispatcher opens EMS, each hospital sample opens its own hospital inbox, Administrator opens staff management, forged browser roles cannot change access, approved built-in misassignments are repaired with an audit entry, fixed sample roles cannot be reassigned, and suspension is preserved
 
+### S-063: Accept with one clear action and a receiving time
+covers: R-044, R-045, R-050, R-052
+Given a hospital opens a new EMS request on desktop or phone
+When staff confirm capacity, choose a receiving time and accept
+Then one primary action records review ownership and acceptance, publishes previously unconfirmed open availability, notifies EMS with hospital and receiving time, and displays neither facility preference nor a generic reply box
+
+### S-064: Confirm current transfer arrangements before completing a handoff
+covers: R-045, R-050, R-052
+Given a request was accepted with a receiving time
+When availability changes after transfer confirmation
+Then completion is blocked until the hospital reconfirms current availability and EMS confirms arrangements again; completion retains receiving hospital, times and staff history
+
+### S-065: Reset a checked confirmation when availability changes
+covers: R-045, R-052
+Given hospital staff checked capacity in an open request
+When another session changes availability
+Then stale confirmation cannot accept the newer version, the current availability is shown, the checkbox resets, and staff must explicitly reconfirm before acceptance
+
+### S-066: Validate direct acceptance and keep one accepting hospital
+covers: R-042, R-045, R-050, R-052
+Given a request has multiple recipient hospitals
+When staff omit or forge the receiving time, use an unauthorized desk, or accept concurrently
+Then invalid changes fail without acceptance, one valid hospital wins, its selected receiving time persists, and EMS can read the persistent notification
+
+### S-067: Resolve historical coordination directly and retain safe records
+covers: R-046, R-048, R-052
+Given a saved request has an outstanding written coordination question or alternative review
+When the accepting hospital confirms direct coordination with EMS
+Then pending acceptance or reconfirmation succeeds only with that acknowledgment, prior records remain, history identifies the acting staff, removed fields cannot be submitted on new requests, notes are safely rendered, and sensitive information is rejected
+
 ## Scope history
 The owner replaced the public role-switching prototype with authenticated SAMPLE staff workflows. The former SPEC and S-024–S-041 browser checks are preserved under docs/archive/public-staff-predecessor; they depended on anonymous writes and unrestricted role/base switching that are intentionally removed. New checks replace that contract with explicit authentication and authorization checks; old checks are not loosened or silently skipped. Real patient access remains out of scope by the owner's explicit choice.
 
 The owner subsequently removed role-selection boxes in favor of the shared sign-in form. The unchanged former S-057 specification and test are archived under docs/archive/role-choice-signin; S-062 verifies the replacement workflow and all sample accounts.
+
+The owner subsequently replaced the detailed request dialog with direct, timed acceptance. The unchanged former S-045, S-046, S-050, S-055 and S-060 are archived under docs/archive/detailed-request-workflow; S-063–S-067 cover the replacement.

@@ -6,9 +6,9 @@ A Piezas-backed prototype for sample staff to coordinate EMS resource requests a
 
 Sign in with one of the clearly labelled example accounts on the sign-in page. The sample administrator reviews invented employee numbers and assigns an EMS or hospital role. These shared credentials are for trying the workflow, not verifying real healthcare employment. Real patient data, real staff emails and real employee numbers must not be entered.
 
-EMS submits a request with an optional facility preference. Hospital staff take responsibility for review, ask for missing timing details if needed, publish current availability and explicitly confirm the resource before accepting. EMS sees the accepting hospital and timestamp, confirms transfer arrangements, and can record a completed handoff. Staff decisions, reasons and times remain in the history.
+EMS sends a resource request. Hospital staff confirm current capacity, choose a receiving time (now, 15, 30 or 60 minutes) and accept with one action. Review ownership and confirmation are recorded automatically. EMS sees the accepting hospital and receiving time, confirms transfer arrangements, then records the completed handoff.
 
-If another option is requested, the original acceptance is retained while the hospital records its response. Unanswered requests can be escalated to a configurable sample backup contact; the app records escalation but sends no external alert. Response targets are examples, not clinically safe waiting times or promises of 24/7 coverage.
+Facility preferences and general written replies are removed. Backup escalation, reasoned review takeover, routing and history sit behind secondary disclosures. Historical coordination can be resolved by an explicit acknowledgment of direct contact with EMS. Receiving times are team-confirmed estimates, not appointments, triage recommendations or safe waiting periods. No external alerts or emergency dispatch are sent.
 
 The BC map is separate from request tracking and has no About Us link. The public About Us page credits teammate Lee’s interview with BC paramedic William Yeung and refers to the interview paper.
 
@@ -28,7 +28,7 @@ Requires Node.js 22+ and npm. Run `npm ci`, configure server-only settings using
 NODE_USE_ENV_PROXY=1 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3202 npx piezas test
 ```
 
-S-042–S-056 and S-058–S-062 in `SPEC.md` cover the authenticated sample workflow. The previous public role-switching specification and tests are preserved in `docs/archive/public-staff-predecessor`, because anonymous writes and unrestricted desk switching were intentionally removed at the owner’s request. Existing Piezas request records are retained.
+The active scenarios in `SPEC.md` cover the authenticated sample workflow and simplified timed acceptance. The previous public role-switching specification and tests are preserved in `docs/archive/public-staff-predecessor`, because anonymous writes and unrestricted desk switching were intentionally removed at the owner’s request. Existing Piezas request records are retained.
 
 `npm run build` creates a clean `runtime/` with only hosted app files. Run the quality scan and final acceptance checks before publishing.
 
