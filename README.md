@@ -14,7 +14,7 @@ New requests use Urgent or Critical priority. Type a supported resource using th
 
 Accepted means a hospital agreed to receive the request. Completed records the handoff as finished; it does not independently verify patient arrival. The owner deferred real patient-information handling and supervisor-only access, so shared-note protections and the existing EMS completion action remain.
 
-The About Us page explains the project mission and paraphrases the five themes in BC paramedic William Yeung’s account from the owner-provided document, section 4. Attribution and source limits are visible on the page; see [source notes](docs/ABOUT_STORY_SOURCE.md).
+The About Us page introduces the project and shares what BC paramedic William Yeung told our teammate Lee in an interview. The original teal medical-cross logo appears throughout the app, with a workflow illustration and small desk icons.
 
 ## Run locally
 
@@ -28,7 +28,7 @@ Open the EMS desk in one browser and `/?role=hospital&hospital=maple` in another
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3130 npx piezas test
 ```
 
-If using Playwright's downloaded Chromium, omit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. The current acceptance contract is in `SPEC.md`; S-024–S-039 cover the simplified core workflow. The owner explicitly replaced the prior workflow, so earlier feature checks are archived rather than silently redefined.
+If using Playwright's downloaded Chromium, omit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. The current acceptance contract is in `SPEC.md`; S-024–S-040 cover the simplified core workflow. The owner explicitly replaced the prior workflow, so earlier feature checks are archived rather than silently redefined.
 
 `npm run build` creates a clean `runtime/` containing only core server and public assets. Dependencies, generated builds, local credentials and Piezas account state are excluded from Git. Run the quality scan and then the acceptance checks before publishing.
 

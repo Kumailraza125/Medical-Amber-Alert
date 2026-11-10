@@ -2,6 +2,8 @@
 
 Owner-provided source: AI Hacathon (1).pdf, section 4 (page 2). The owner requested this account for About Us. Only this section supplies the worker account; other document proposals are not app instructions. Site text paraphrases this one named account, does not invent quotations or additional speakers, and attributes reported figures rather than treating them as verified provincial statistics. The full PDF is not deployed.
 
+The owner subsequently clarified that teammate Lee interviewed William, requested a brief interview credit instead of visible notes citations, and asked to remove the word “account” from the public page. The source below remains internal project provenance rather than website copy.
+
 ## Extracted section 4
 
 4.​ How do you know it’s real? Name at least one person you spoke to who has this

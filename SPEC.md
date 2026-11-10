@@ -25,8 +25,10 @@ A map hospital link opens a dedicated read-only hospital profile with resources,
 ### R-029: Type a resource and focus new requests on urgent care
 Replace the resource dropdown with a text field with suggestions for supported resources. Match case-insensitively and reject unsupported entries with a useful message rather than inventing eligible capacity. Remove Routine from new submissions while keeping historic records readable.
 
-### R-030: About Us and an attributed healthcare-worker account
-Add an About Us page reachable from the desks and supporting network/profile pages. Explain the project mission and include five paraphrased themes from William Yeung’s account in section 4 of the owner-provided AI Hacathon (1).pdf. Attribute him as a BC paramedic and identify the supplied notes as the source. Do not invent direct quotations, additional interviewees, team credentials, endorsements or verified province-wide statistics. Keep prototype limits clear and preserve desk context on navigation.
+### R-030: Clear About Us copy and Lee’s interview
+About Us explains the project in plain language and presents William Yeung’s experiences in five short themes. Credit teammate Lee briefly for interviewing William, as clarified by the owner. Remove visible PDF/notes citations and the word “account”; keep internal source documentation only. Preserve reported figures and qualifiers, with no invented quotations, credentials or additional interviewees. Desk navigation keeps its context.
+### R-031: Restore the original logo and add useful visuals
+Restore the original white-cross-on-teal logo from the archived app on the EMS desk, Hospital desk, map/ledgers, hospital profile and About Us. Add an accessible illustration of the existing EMS request → hospital acceptance → EMS notification workflow on About Us and small decorative icons on desk summary cards and the request form. Local assets load in the hosted build, with legible text and no phone overflow.
 
 ## Data
 - Hospital: static example identity, coordinates, resources and contact; readiness status/update time stored in the existing Piezas facility records.
@@ -125,11 +127,17 @@ Given a hospital ledger is open with a search and a BC map is open with a select
 When another desk sends a request or updates hospital availability
 Then the ledger updates automatically and the map shows the changed availability while search, resource filter and selected hospital stay intact, even when the hospital falls outside the current availability filter (marked clearly and excluded from the match count)
 
-### S-039: Read About Us and the attributed paramedic account
+### S-039: Read About Us and Lee’s interview with William Yeung
 covers: R-030
 Given a visitor opens the EMS or Hospital desk
 When they navigate to About Us on desktop or phone
-Then they can read the mission, William Yeung’s five attributed account themes, the source and paraphrase notice, and return to the same desk context without horizontal overflow; network and hospital-profile pages also link to About Us
+Then they can read the mission, William Yeung’s five experience themes and Lee’s interview credit without notes citations, invented quotes or the word “account”, and return to the same desk context without horizontal overflow; network and hospital-profile pages also link to About Us
+
+### S-040: See the original logo and clear workflow visuals across the app
+covers: R-031
+Given a visitor opens the desks, BC map, hospital profile and About Us
+When each screen renders on desktop or phone
+Then the original logo loads on every screen, the About Us workflow illustration is available with meaningful alternative text, and desk summary icons render without changing request actions or causing horizontal overflow
 
 ## Architecture and operational limits
 Piezas owns request, readiness and notification metadata records. The app owns validation, UI, matching and notification polling. Existing entity names and stored records remain compatible; no data is deleted. The app serializes mutations in one process so first acceptance wins; multi-replica deployments would need durable concurrency controls. Active EMS pages poll approximately every 4 seconds and on returning to the page. Poll failures show that updates are unavailable; the app never claims an external message was sent.

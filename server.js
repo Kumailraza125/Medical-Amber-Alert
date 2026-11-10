@@ -205,11 +205,11 @@ http.createServer(async (req, res) => {
     }
     if(url.pathname.startsWith('/api/'))fail(404,'That feature is not part of the current EMS workflow.');
     if (!['GET','HEAD'].includes(req.method)) fail(405,'That action is not supported.');
-    const files={'/':'index.html','/index.html':'index.html','/about.html':'about.html','/about.js':'about.js','/about.css':'about.css','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/hospital.html':'hospital.html','/hospital-profile.js':'hospital-profile.js','/requests.html':'network.html','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/core.css':'core.css','/workspace.css':'workspace.css','/report-widget.js':'report-widget.js'};
+    const files={'/logo.svg':'logo.svg','/coordination-flow.svg':'coordination-flow.svg','/brand.css':'brand.css','/ui-visuals.js':'ui-visuals.js','/':'index.html','/index.html':'index.html','/about.html':'about.html','/about.js':'about.js','/about.css':'about.css','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/hospital.html':'hospital.html','/hospital-profile.js':'hospital-profile.js','/requests.html':'network.html','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/core.css':'core.css','/workspace.css':'workspace.css','/report-widget.js':'report-widget.js'};
     const file=files[url.pathname];
     if (!file) fail(404,'Page not found.');
     const data=await readFile(path.join(root,file));
-    res.writeHead(200,{'Content-Type':({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.pdf':'application/pdf','.pptx':'application/vnd.openxmlformats-officedocument.presentationml.presentation','.md':'text/plain; charset=utf-8','.txt':'text/plain; charset=utf-8'})[path.extname(file)],'Cache-Control':'no-cache'});
+    res.writeHead(200,{'Content-Type':({'.svg':'image/svg+xml','.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.pdf':'application/pdf','.pptx':'application/vnd.openxmlformats-officedocument.presentationml.presentation','.md':'text/plain; charset=utf-8','.txt':'text/plain; charset=utf-8'})[path.extname(file)],'Cache-Control':'no-cache'});
     res.end(req.method==='HEAD' ? undefined : data);
   } catch (e) {
     const status=e.userFacing ? e.status : 503;

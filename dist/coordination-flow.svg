@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 340" width="460" height="340">
+<title>From an EMS request to hospital acceptance</title><desc>EMS sends a resource request. A hospital accepts. The EMS desk sees which hospital accepted.</desc>
+<rect x="1" y="1" width="458" height="338" rx="26" fill="#e8f3f0" stroke="#d6e8e1"/>
+<circle cx="360" cy="77" r="45" fill="#d7eae3"/><circle cx="88" cy="274" r="32" fill="#dcece7"/>
+<path d="M135 105h175" fill="none" stroke="#83b4a4" stroke-width="2" stroke-dasharray="5 6"/><path d="m299 98 11 7-11 7" fill="none" stroke="#408d79" stroke-width="2"/>
+<rect x="45" y="59" width="105" height="75" rx="14" fill="#fff" stroke="#b8d7cb"/>
+<g fill="none" stroke="#0c7164" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M63 110V82h43l19 16v12H63 M106 82v18h19 M76 88v13 M70 94h13"/><circle cx="77" cy="112" r="6" fill="#fff"/><circle cx="113" cy="112" r="6" fill="#fff"/></g>
+<rect x="310" y="48" width="101" height="105" rx="14" fill="#fff" stroke="#b8d7cb"/><path d="M330 136V78h61v58 M323 136h75 M353 136v-20h16v20 M349 92h24 M361 80v24" fill="none" stroke="#0c7164" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+<g font-family="system-ui,sans-serif" fill="#264f50" text-anchor="middle"><text x="98" y="159" font-size="14" font-weight="650">EMS sends</text><text x="98" y="177" font-size="14">a request</text><text x="360" y="177" font-size="14" font-weight="650">Hospital accepts</text></g>
+<path d="M356 192v27q0 15-15 15h-32" fill="none" stroke="#83b4a4" stroke-width="2" stroke-dasharray="5 6"/><path d="m319 227-11 7 11 7" fill="none" stroke="#408d79" stroke-width="2"/>
+<rect x="124" y="211" width="178" height="83" rx="15" fill="#fff" stroke="#b8d7cb"/><circle cx="151" cy="239" r="12" fill="#e1f1e9"/><path d="m145 239 4 4 8-9" fill="none" stroke="#0c7164" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<g font-family="system-ui,sans-serif" fill="#264f50"><text x="172" y="243" font-size="14" font-weight="650">Hospital accepted</text><text x="142" y="272" font-size="14">EMS sees the destination</text></g>
+</svg>
