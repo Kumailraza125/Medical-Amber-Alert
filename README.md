@@ -1,41 +1,33 @@
 # Hospital Connect
 
-A Piezas-backed EMS-to-hospital coordination demo.
+A Piezas-backed prototype for sample staff to coordinate EMS resource requests and hospital responses.
 
-1. An EMS agent sends a resource request to a hospital or all matching nearby hospitals.
-2. A receiving hospital accepts directly. The first valid acceptance wins.
-3. EMS sees an automatic in-app notification naming the accepting hospital and acceptance time.
+[Live app](https://hospital-connect-2179.apps.piezas.ai)
 
-[Live app](https://hospital-connect-2179.apps.piezas.ai) · [BC map](https://hospital-connect-2179.apps.piezas.ai/network.html)
+Sign in with one of the clearly labelled example accounts on the sign-in page. The sample administrator reviews invented employee numbers and assigns an EMS or hospital role. These shared credentials are for trying the workflow, not verifying real healthcare employment. Real patient data, real staff emails and real employee numbers must not be entered.
 
-The app now keeps only the EMS desk, Hospital desk, hospital availability, request tracking, acceptance notifications, and supporting map/ledgers. Screening, patient-data tools, worker payments and hackathon submission screens are retired. Historical source and checks remain in `docs/archive`; saved Piezas records are retained.
+EMS submits a request with an optional facility preference. Hospital staff take responsibility for review, ask for missing timing details if needed, publish current availability and explicitly confirm the resource before accepting. EMS sees the accepting hospital and timestamp, confirms transfer arrangements, and can record a completed handoff. Staff decisions, reasons and times remain in the history.
 
-New requests use Urgent or Critical priority. Type a supported resource using the suggestions; unsupported resources are rejected rather than implying unverified hospital capacity. Incoming badges count pending requests for the selected hospital, not patients. Hospital profiles are read-only; opening a hospital desk is a separate action. Desk and network views refresh saved updates while visible.
+If another option is requested, the original acceptance is retained while the hospital records its response. Unanswered requests can be escalated to a configurable sample backup contact; the app records escalation but sends no external alert. Response targets are examples, not clinically safe waiting times or promises of 24/7 coverage.
 
-Accepted means a hospital agreed to receive the request. Completed records the handoff as finished; it does not independently verify patient arrival. The owner deferred real patient-information handling and supervisor-only access, so shared-note protections and the existing EMS completion action remain.
+The BC map is separate from request tracking and has no About Us link. The public About Us page credits teammate Lee’s interview with BC paramedic William Yeung and refers to the interview paper.
 
-The About Us page introduces the project and shares what BC paramedic William Yeung told our teammate Lee in an interview. The original teal medical-cross logo appears throughout the app, with a workflow illustration and small desk icons.
+## Access and storage
 
-The BC map is a standalone view for hospital locations and availability. Active, incoming and completed request tracking belongs in the EMS and Hospital desks. Older request-ledger bookmarks remain compatible but are not linked from the map.
+Piezas manages credentials and signed sessions. The server checks the approved role and facility on every operational read/write; query parameters do not grant access. Requests, staff assignments, readiness, policy and audit records stay in Piezas. There is no local business database or patient intake.
+
+Example requests remain until an administrator explicitly deletes them by reference and reason. Deletion leaves minimal administrative metadata for the project lifetime and does not recreate seed requests. Provider backup deletion and production retention have not been configured. See the app’s Data care page for current rules.
+
+Before any real patient use, replace shared sample accounts with verified staff onboarding, agree on a real administrator and legally reviewed retention, review provider security and backups, and establish clinical governance. HTTPS and sign-in alone do not establish healthcare compliance.
 
 ## Run locally
 
-Requires Node.js 22+ and npm. Run `npm ci`, configure server-only settings using `.env.example`, then run `npm run build` and `npm run dev`. The local app listens on port 3100. Keep `.env` private and use a separate Piezas test app for `PIEZAS_TEST_API_KEY`.
-
-Open the EMS desk in one browser and `/?role=hospital&hospital=maple` in another. Send an MRI request from the Cedar Valley base and accept it at Maplewood. The visible EMS page checks for saved updates approximately every four seconds and when focus returns. Notifications and read state are stored in Piezas; no external email, SMS or browser-push message is sent.
-
-## Checks and deployment
+Requires Node.js 22+ and npm. Run `npm ci`, configure server-only settings using `.env.example`, then `npm run build` and `npm run dev`. Use a separate Piezas test app for `PIEZAS_TEST_API_KEY`; never commit `.env`. The SDK resolves the managed users service from the configured API gateway.
 
 ```sh
-PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3130 npx piezas test
+NODE_USE_ENV_PROXY=1 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3202 npx piezas test
 ```
 
-If using Playwright's downloaded Chromium, omit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. The current acceptance contract is in `SPEC.md`; S-024–S-041 cover the simplified core workflow. The owner explicitly replaced the prior workflow, so earlier feature checks are archived rather than silently redefined.
+S-042–S-055 in `SPEC.md` cover the authenticated sample workflow. The previous public role-switching specification and tests are preserved in `docs/archive/public-staff-predecessor`, because anonymous writes and unrestricted desk switching were intentionally removed at the owner’s request. Existing Piezas request records are retained.
 
-`npm run build` creates a clean `runtime/` containing only core server and public assets. Dependencies, generated builds, local credentials and Piezas account state are excluded from Git. Run the quality scan and then the acceptance checks before publishing.
-
-## Limits
-
-This is a shared public demo. Desk selectors are not authentication; do not enter real patient data. Hospital identities, locations, resources and capacity are examples. BC geography is real. Notifications are in-app and depend on the app being open or reopened. No live clinical capacity, road routing, real emergency dispatch, payments or clinical screening is provided.
-
-See [HOSPITAL_CONNECT.md](HOSPITAL_CONNECT.md), [SPEC.md](SPEC.md) and [map source notes](docs/MAP_SOURCES.md).
+`npm run build` creates a clean `runtime/` with only hosted app files. Run the quality scan and final acceptance checks before publishing.

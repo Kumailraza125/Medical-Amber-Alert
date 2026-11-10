@@ -1,167 +1,109 @@
-# Hospital Connect — EMS request and hospital acceptance
+# Hospital Connect — sample staff coordination
 
 ## Overview
-Owner-confirmed scope: remove the Hackathon Submission and Worker Payment tabs and keep only the core EMS-to-hospital coordination workflow. An EMS agent sends a resource request, a receiving hospital accepts directly, and the EMS agent sees a persistent in-app acceptance notification naming that hospital and the acceptance time.
+The owner requested staff sign-in, role permissions, employee-number registration, recorded review responsibilities, resource reconfirmation, clearer stages, preferences, escalation and storage/deletion rules. They explicitly chose SAMPLE email addresses and staff accounts and to keep REAL PATIENT DATA BLOCKED. This is an authenticated prototype for invented examples, not verified professional access or a clinical service. No real staff email, employee number or patient data should be entered.
 
-## Users and journey
-The shared demo provides an EMS desk and a Hospital desk, with selectors for the dispatch base and receiving hospital. These are demo contexts, not authenticated staff roles. EMS creates a resource request for a selected hospital or all eligible nearby hospitals. A receiving hospital accepts in one action. No second EMS approval is needed. The EMS page polls while visible and displays the accepting hospital automatically. EMS may mark the notification read and optionally mark the request completed after handoff.
-
-## Non-goals
-No real patient data, patient intake or AI screening, data imports/exports, worker payments, hackathon submission screens, real ambulance dispatch, email/SMS/browser-push notifications, live clinical capacity, or real staff authentication. Former saved records are retained in Piezas; removed screens and APIs are not served.
+## Users and permissions
+Piezas users service owns credentials and signed sessions. Cookies are HttpOnly and SameSite=Strict (Secure on hosting). Demo administrator, EMS and hospital accounts are explicitly shared examples; anyone using their published sample credentials can try those roles. This does not establish real employment or production security. Employee-number requests must use DEMO identifiers and .example.test addresses; they remain pending until the sample administrator records a verification decision and assigns a role/facility. Browser-provided role/facility/user IDs are never authorization. EMS sees requests from its assigned base; a hospital sees only requests addressed to or accepted by its assigned hospital; administrator manages example staff, settings and deletion. No AI medical screening or real clinical decisions.
 
 ## Requirements
-- R-020: EMS can send a resource/priority/radius request from a sample dispatch base to a selected eligible hospital or all eligible hospitals. Recipients and EMS desk identity are saved in Piezas. [Stated, current owner request; targeting choice assumed]
-- R-021: A receiving hospital directly accepts a pending request; first acceptance wins. Closed, ineligible, non-recipient and competing acceptances are rejected. EMS never approves an offer as a second step. [Stated, current owner request; concurrency rules assumed]
-- R-022: EMS receives an automatic in-app acceptance update naming the hospital and time. The acceptance and read state persist in Piezas and survive refresh. [Stated; in-app polling assumed because no external channel was requested]
-- R-023: Navigation and hosted routes contain only the EMS desk, Hospital desk, hospital availability, request details and supporting map/ledgers. Retired screening/data/payment/submission endpoints and downloads are unavailable. [Stated, only keep core features]
-- R-024: Hospital availability and BC map remain available to support resource matching, using the existing example locations and saved statuses. [Assumed, support for the core workflow]
-- R-025: Invalid input is rejected, shared notes reject common sensitive details, text is rendered safely, failed saves remain visible, and the app fits a phone. [Existing safety/usability requirements retained]
-- R-026: EMS can mark an accepted request complete without losing its accepting hospital or acceptance notification history. [Assumed, core request tracking]
+- R-042: Real Piezas-managed sign-in/sign-out and MFA-challenge handling; verified service sessions determine server-side permissions. Samples are labelled as public example identities, not verified healthcare workers. Invalid, anonymous and disabled users cannot access coordination records.
+- R-043: Sample access registration collects a display name, DEMO employee number, sample email and requested role/facility. The administrator must review and approve or reject it. Request fields never grant privileges. No actual employee verification integration or email to real people is provided.
+- R-044: Requests show Submitted, Under review, Awaiting response, Accepted and Completed stages. The EMS coordinator and reviewing hospital member are identified from their sessions. Another approved member of the same hospital can take over a pending review only with a recorded reason; the previous reviewer then loses authority to make its review decision. Required resource/priority/radius fields are validated; medical decisions stay with qualified staff in a future real deployment. Notes remain non-clinical examples.
+- R-045: Hospital availability shows update time and updating staff. Review and explicit resource confirmation are required before acceptance. Saving newer availability invalidates old confirmation. EMS must confirm transfer arrangements against the current availability before completion; the app does not independently confirm arrival or direct an ambulance.
+- R-046: A fictional facility preference is recorded separately from routing. Hospital review records suitability/trade-offs if accepting a different facility. EMS can request another option after acceptance without silently deleting the existing acceptance; hospital staff record a reasoned response before transfer can be confirmed.
+- R-047: Configurable SAMPLE workflow response targets and backup contact are shown. Unanswered requests can be escalated with a reason and recorded timestamp. Escalation does not send email, SMS or emergency dispatch. A service failure tells staff to use their established offline process. No 24/7 staffing or clinically safe waiting time is claimed.
+- R-048: Requests remain in Piezas until a sample administrator explicitly deletes them using their reference and reason. Deletion does not recreate seed records. Minimal deletion/audit metadata remains for the project lifetime. No automatic purging, provider backup erasure or production-compliant retention is claimed. Real retention/legal/privacy approval remains required before any real-patient use.
+- R-049: BC map stays standalone and has NO About Us link. It uses authenticated availability. Public About Us retains Lee’s interview credit, the interview-paper wording, William Yeung’s name and the reported 12-hour, 3–6-hour, 16-hour and 1–2-hour details without invented quotes; the original logo and diagram remain; operational data routes require approved sample staff access. Responsive interface fits a phone.
+- R-050: Acceptance notifications retain accepting hospital, time and read state. First valid accepting hospital wins. All workflow actions and reasons have server-derived staff identity/time, with least-privilege checks on every read/write.
 
-### R-027: Consistent incoming counts and visible saved requests
-Count incoming requests awaiting this hospital's response, not patients or possible acceptances. Use the same saved recipient/status rules for desk and ledger views. Sending while filtered must reveal the saved request; hospital acceptance must move it to Accepted here. Count/filter controls identify their selected view and take visitors to the relevant list.
-### R-028: Explore one hospital without changing working desk
-A map hospital link opens a dedicated read-only hospital profile with resources, status, contact, and an explicit separate action to open that hospital's desk. Return links preserve originating EMS/hospital context. Map and ledger refresh in the background without resetting filters, selection or search.
-### R-029: Type a resource and focus new requests on urgent care
-Replace the resource dropdown with a text field with suggestions for supported resources. Match case-insensitively and reject unsupported entries with a useful message rather than inventing eligible capacity. Remove Routine from new submissions while keeping historic records readable.
-
-### R-030: Clear About Us copy and Lee’s interview
-About Us explains the project in plain language and presents William Yeung’s experiences in five short themes. Credit teammate Lee briefly for interviewing William, as clarified by the owner. Refer to the source as the “interview paper”, as requested by the owner, without a PDF filename or notes citation. Remove the word “account”; keep internal source documentation only. Preserve reported figures and qualifiers, with no invented quotations, credentials or additional interviewees. Desk navigation keeps its context.
-### R-031: Restore the original logo and add useful visuals
-Restore the original white-cross-on-teal logo from the archived app on the EMS desk, Hospital desk, map/ledgers, hospital profile and About Us. Add an accessible illustration of the existing EMS request → hospital acceptance → EMS notification workflow on About Us and small decorative icons on desk summary cards and the request form. Local assets load in the hosted build, with legible text and no phone overflow.
-
-### R-032: Keep the BC map separate from request tracking
-The BC map is a standalone page without Active, Incoming or Completed request tabs. A legacy view query on /network.html must still show the map. Keep geographic filters, hospital details, profiles, logo, About Us and a context-preserving return to the correct desk. Map loading and refreshing read only hospital availability, not request records. Older /requests.html bookmarks remain compatible but are not linked from the map. Lee’s visible credit uses the owner’s wording that he contacted William Yeung for an interview and these are his remarks.
-
-## Data
-- Hospital: static example identity, coordinates, resources and contact; readiness status/update time stored in the existing Piezas facility records.
-- Request: existing Piezas request entity with base hospitalId for geographic routing, resource, priority, radius, note and status.
-- Delivery: existing optional JSON-string field stores requester {type: ems, agentId, baseHospitalId, name}, immutable recipient IDs, routing events, acceptanceMode, acceptedAt and notificationReadAt.
-- Acceptance notification: derived server-side from accepted request metadata; the read timestamp is stored on that Piezas request. No local business database, credential storage or simulated external delivery.
+## Architecture
+Use the published Piezas SDK: users service for credentials/sessions, entity records for staff approvals, policy, audit, readiness and requests. No local business database, hand-written authentication provider or passwords in entity records. The SDK derives users-service routing from the existing required PIEZAS_API_URL. Existing example requests are retained; no automatic mass deletion or seed recreation. App process serializes mutations; multiple replicas would need durable concurrency controls.
 
 ## Acceptance Scenarios
-### S-024: EMS sends a request to a selected hospital
-covers: R-020
-Given an EMS agent uses the Cedar Valley base
-When they send an MRI request specifically to Maplewood
-Then it is saved with Maplewood as its only recipient and appears in Maplewood hospital requests
+### S-042: Sign in as sample staff and reject role spoofing
+covers: R-042, R-049
+Given a visitor is not signed in
+When they sign in with invalid or valid sample credentials and change URL context
+Then invalid credentials fail, valid staff get their assigned desk, changing role/base parameters grants no privileges, and sign-out removes access
 
-### S-025: Hospital accepts and EMS sees an automatic notification
-covers: R-021, R-022
-Given EMS has sent an MRI request and a separate hospital browser is open
-When Maplewood accepts the request directly
-Then the waiting EMS browser automatically shows Accepted, Maplewood Regional Hospital and an acceptance time without a second approval
+### S-043: Approve employee-number access requests before granting a role
+covers: R-043, R-042
+Given a person registers with a sample email and DEMO employee number
+When the sample administrator records verification and approves a facility role
+Then the pending user gains only that role; self-assigned admin fields and non-sample identifiers are rejected
 
-### S-026: Reject competing and invalid hospital acceptances
-covers: R-021
-Given a request has been sent to nearby hospitals
-When an ineligible or closed hospital accepts, or two hospitals compete
-Then invalid acceptances are rejected and only one accepting hospital remains saved
+### S-044: Restrict operational records by assigned role and hospital
+covers: R-042, R-050
+Given EMS and hospital staff have different assignments
+When they read or change requests belonging to another base or unrelated hospital
+Then unauthorized reads return not found and unauthorized writes fail without changing records
 
-### S-027: Persist acceptance notifications and their read state
-covers: R-022
-Given a hospital has accepted an EMS request
-When EMS refreshes, marks the notification read and refreshes again
-Then the same accepting hospital and time remain visible and its read state remains saved
+### S-045: Review and reconfirm availability before a transfer
+covers: R-044, R-045
+Given EMS submits a request and hospital staff start reviewing it
+When availability is published, acceptance is confirmed and EMS confirms transfer arrangements
+Then stages and responsible staff are recorded, stale or missing confirmations fail, and completion retains hospital and history
 
-### S-028: Keep only core navigation and disable retired features
-covers: R-023
-Given a visitor opens the app and its former workspace link
-When they inspect navigation and request retired payment, submission, screening and data endpoints
-Then only core EMS/hospital/map navigation is available and retired endpoints or downloads return not found
+### S-046: Review a preference or another option without losing acceptance
+covers: R-046, R-050
+Given a request names a preferred facility
+When another hospital accepts and EMS requests another option
+Then a trade-off explanation is required, original acceptance remains, and hospital staff must record a response before transfer confirmation
 
-### S-029: Use hospital availability and the BC map in the core workflow
-covers: R-024, R-020
-Given Maplewood is marked Closed in its Hospital desk
-When EMS starts an MRI request and opens the local BC map with Closed filtering
-Then Maplewood is excluded from new request recipients but its closed map marker is selectable
+### S-047: Escalate unanswered requests using the configured backup process
+covers: R-047
+Given a sample response target and backup contact are configured
+When staff escalate an unanswered request or lose connection during saving
+Then reasons and actors are recorded, the backup path is clear, and no external notification or successful offline save is claimed
 
-### S-030: Protect shared notes and fit a phone screen
-covers: R-025
-Given EMS uses a narrow screen
-When they enter sensitive identifiers or safe HTML-like note text
-Then sensitive input is rejected with a lasting error, allowed text is rendered literally and the page stays within the viewport
+### S-048: Apply the storage policy and delete only with administrator approval
+covers: R-048, R-042
+Given sample requests are stored in Piezas
+When a non-admin tries deletion or an administrator confirms a reference and reason
+Then only the authorized deletion succeeds, the request stays deleted after reload, and minimal deletion metadata remains
 
-### S-031: Complete a request while retaining its acceptance history
-covers: R-026
-Given a hospital directly accepted an EMS request
-When EMS marks the handoff completed
-Then the request stays linked to that hospital and its acceptance notification remains available after refresh
+### S-049: Keep the authenticated BC map separate and remove About Us there
+covers: R-049
+Given approved sample staff opens BC map or a public About Us page
+When they inspect navigation and select a hospital on a phone
+Then the map has neither request tabs nor About Us, the logo and map work, About Us remains available elsewhere, and no horizontal overflow occurs
 
-### S-032: Keep older acceptance notifications accessible
-covers: R-022
-Given more than eight hospital requests have been accepted for one EMS desk
-When EMS opens the oldest acceptance and marks it read
-Then its hospital and time remain accessible and its read state is saved
+### S-050: Request missing coordination details and retain accountability
+covers: R-044, R-050
+Given hospital staff claimed review of a submitted request
+When hospital staff request timing details and EMS replies
+Then Awaiting response returns to Under review with named staff, reasons and timestamps; sensitive notes and missing required inputs are rejected
 
-### S-033: Keep connection-failure errors visible and allow a safe retry
-covers: R-025
-Given EMS and hospital pages are loaded
-When their browser loses connection during sending or acceptance
-Then an uncertainty/error message remains visible, no successful change is claimed, and retrying after reconnect works
+### S-051: Accept once and notify the requesting EMS desk
+covers: R-050, R-045
+Given an EMS request has multiple eligible hospital recipients
+When hospitals compete to accept after review and confirmation
+Then one hospital wins, the other is rejected, and EMS sees the persistent accepting hospital/time and can mark the update read
 
-### S-034: Keep hospital counts and incoming request lists consistent
-covers: R-027
-Given EMS and separate hospital pages share the same saved scope
-When EMS sends to selected or nearby hospitals and a recipient accepts
-Then pending counts equal visible incoming rows, the recipient sees the request automatically, and Accepted here shows only that hospital's accepted requests
+### S-052: Revoke staff access immediately
+covers: R-042, R-043
+Given an approved sample employee has an active session
+When an administrator suspends their app assignment
+Then the existing session no longer permits operational reads or writes
 
-### S-035: Reveal a newly saved request despite a previous filter
-covers: R-027
-Given EMS has filtered to completed requests
-When EMS sends a new request
-Then it appears in the request list with its saved recipients and the selected list filter is clear
+### S-053: Complete managed second-factor sign-in and retry an incorrect code
+covers: R-042
+Given an approved sample employee enrolled an authenticator through Piezas
+When they sign in, enter an incorrect code and then a correct code
+Then no session is granted for the incorrect code and the correct code opens their assigned desk
 
-### S-036: Explore one hospital and return to the same desk context
-covers: R-028
-Given an EMS visitor selects Maplewood on the BC map
-When they open the hospital profile and return to the map
-Then the profile contains only Maplewood's details, preserves the EMS base on return, and switching to Maplewood's working desk is a separate explicit action
+### S-054: Manage approvals, backup settings and suspension through the interface
+covers: R-043, R-047, R-044, R-042
+Given a new sample employee requested hospital access
+When the administrator verifies their invented number, sets a backup policy and approves the role on screen, and the employee takes over a review with a reason
+Then the assigned employee can review that hospital’s request, the saved target and backup apply, and suspending them on screen removes their access
 
-### S-037: Type supported resources and reject unsupported or Routine requests
-covers: R-029
-Given EMS types a supported resource using different letter case
-When they send an urgent request
-Then matching uses the supported resource and the request is saved; unsupported resource text and new Routine requests are rejected without creating a record
-
-### S-038: Keep map and ledger views current without losing filters
-covers: R-028
-Given a hospital ledger is open with a search and a BC map is open with a selection and resource filter
-When another desk sends a request or updates hospital availability
-Then the ledger updates automatically and the map shows the changed availability while search, resource filter and selected hospital stay intact, even when the hospital falls outside the current availability filter (marked clearly and excluded from the match count)
-
-### S-039: Read About Us and Lee’s interview with William Yeung
-covers: R-030
-Given a visitor opens the EMS or Hospital desk
-When they navigate to About Us on desktop or phone
-Then they can read the mission, William Yeung’s five experience themes and Lee’s interview credit without notes citations, invented quotes or the word “account”, and return to the same desk context without horizontal overflow; network and hospital-profile pages also link to About Us
-
-### S-040: See the original logo and clear workflow visuals across the app
-covers: R-031
-Given a visitor opens the desks, BC map, hospital profile and About Us
-When each screen renders on desktop or phone
-Then the original logo loads on every screen, the About Us workflow illustration is available with meaningful alternative text, and desk summary icons render without changing request actions or causing horizontal overflow
-
-### S-041: Use the BC map without old request tabs
-covers: R-032
-Given EMS or hospital staff opens the BC map, including an old map link with a request-view query
-When they filter hospitals, open a profile or return to their desk
-Then only the map is shown, there are no Active/Incoming/Completed request tabs or links, the map does not fetch request records, and desk context and hospital interactions still work on desktop and phone
-
-## Architecture and operational limits
-Piezas owns request, readiness and notification metadata records. The app owns validation, UI, matching and notification polling. Existing entity names and stored records remain compatible; no data is deleted. The app serializes mutations in one process so first acceptance wins; multi-replica deployments would need durable concurrency controls. Active EMS pages poll approximately every 4 seconds and on returning to the page. Poll failures show that updates are unavailable; the app never claims an external message was sent.
-
-Shared demo selectors are not authentication. Use sample data only. Actual staff access control and production privacy/clinical review remain outside scope. BC geography is real; hospital locations and capacity remain invented. Road travel times and external emergency dispatch are not provided.
+### S-055: Review a requested alternative through the hospital interface
+covers: R-046, R-045, R-050
+Given a request has a preferred facility and a confirmed acceptance
+When EMS requests another option and hospital staff record a response using their visible controls
+Then the preference and reasons are shown, transfer is blocked until the review finishes, and the original acceptance and history remain
 
 ## Scope history
-Previous scenario IDs S-001–S-023 and the preceding specification were archived under docs/archive because the owner explicitly replaced that workflow and removed non-core features. Current tests have new IDs rather than silently reinterpreting earlier passed checks.
-
-## Owner-approved interface refinement — 2026-11-09
-Simplify the existing core desks and map without changing their workflow. Keep one prominent disclaimer per page covering example data, public role switching, no patient information and no real dispatch. Remove repeated demo/fictional/sample wording from controls and details. Use a clearer visual hierarchy, compact status summary, prominent request form, concise notifications and consistent responsive navigation. Existing S-024–S-033 cover retained behaviour; this is a presentation refinement of those requirements.
-
-## Current workflow corrections — owner request 2026-11-09
-Keep the simplified EMS/hospital/map structure; do not restore retired dashboard duplication or patient-transfer counts that the app does not track.
-
-Real patient information and supervisor-only completion depend on the owner's pending choice between the shared prototype and private staff access. Do not represent context selectors as authentication or relax shared-note protections while this is unresolved.
-
-Owner clarification: defer the decision on real patient information and supervisor-only access. This release retains shared-note protections and the existing EMS completion action, with a clear acceptance-versus-handoff explanation. It does not claim supervisor authentication, confirmed patient arrival, patient counts, clinical triage or external dispatch.
+The owner replaced the public role-switching prototype with authenticated SAMPLE staff workflows. The former SPEC and S-024–S-041 browser checks are preserved under docs/archive/public-staff-predecessor; they depended on anonymous writes and unrestricted role/base switching that are intentionally removed. New checks replace that contract with explicit authentication and authorization checks; old checks are not loosened or silently skipped. Real patient access remains out of scope by the owner's explicit choice.

@@ -1,3 +1,5 @@
+import {createStaffAccess} from './lib/staff-access.js';
+import {applyAction,canRead,safeReason} from './lib/request-workflow.js';
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -5,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { Piezas, createReportProblemRoute } from '@piezas/sdk';
-import { hospitals, resources, seedRequests, distance } from './dist/seed.js';
+import { hospitals, resources } from './dist/seed.js';
 import { createReadiness } from './lib/readiness.js';
 import { noteHasSensitiveDetails } from './lib/coordination-note.js';
 import {eligibleHospitals,canonicalResource} from './dist/request-utils.js';
@@ -15,6 +17,7 @@ const apiKey = testing ? process.env.PIEZAS_TEST_API_KEY : process.env.PIEZAS_AP
 if (!apiKey) throw new Error('Piezas connection is missing. Configure the server before starting.');
 const piezas = new Piezas({ apiKey, apiBaseUrl: process.env.PIEZAS_API_URL || 'https://api.piezas.ai' });
 const reports = createReportProblemRoute({ piezas });
+const access=createStaffAccess({piezas,testing});
 const entitySlug = testing ? 'hospital_connect_test_demo_request' : 'hospital_connect_shared_demo_request';
 let storePromise;
 function store() {
@@ -35,7 +38,6 @@ function store() {
   return storePromise;
 }
 const hospital = id => hospitals.find(h => h.id === id);
-const matches = (r, id) => id !== r.hospitalId && hospital(id)?.resources.includes(r.resource) && distance(hospital(r.hospitalId), hospital(id)) <= r.radiusKm;
 const sharedTag = 'hospital-connect-shared-demo-v1';
 const testPrefix = 'hospital-connect-test-';
 function scope(req, res) {
@@ -67,14 +69,6 @@ function serial(fn) {
   tail = next.catch(() => {});
   return next;
 }
-async function ensureSeed(tag) {
-  const client = await store(), existing = await records(tag);
-  for (const seed of seedRequests) {
-    if (!existing.some(r => r.data.displayId === seed.id)) {
-      await client.create({ ...encode(seed), tags:[tag] });
-    }
-  }
-}
 function fail(status, message) { throw Object.assign(new Error(message), { status, userFacing:true }); }
 async function body(req, limit = 8192) {
   let size = 0, chunks = [];
@@ -83,7 +77,7 @@ async function body(req, limit = 8192) {
     if (size > limit) fail(413, 'Please shorten your request.');
     chunks.push(chunk);
   }
-  try { return JSON.parse(Buffer.concat(chunks).toString()); }
+  try { const value=JSON.parse(Buffer.concat(chunks).toString());if(!value||typeof value!=='object'||Array.isArray(value))fail(400,'Please send valid form fields.');return value; }
   catch { fail(400, 'Please send a valid request.'); }
 }
 function json(res, status, value) {
@@ -123,89 +117,33 @@ http.createServer(async (req, res) => {
       if (Date.now()-rateStart>60000) { rateStart=Date.now(); writes=0; }
       if (++writes>120) fail(429,'The shared demo is busy. Please try again in a minute.');
     }
-    if(url.pathname==='/workspace.html'){
-      res.writeHead(302,{Location:'/', 'Cache-Control':'no-store'});res.end();return;
-    }
-    if(url.pathname==='/api/readiness'&&req.method==='GET')return json(res,200,await readiness.get(scope(req,res)));
+    if(['/', '/index.html','/network.html','/requests.html','/hospital.html','/staff.html'].includes(url.pathname)&&!/(?:^|;\s*)hc_session=[^;]+/.test(req.headers.cookie||'')){res.writeHead(302,{Location:'/login.html','Cache-Control':'no-store'});return res.end();}
+    const tag=scope(req,res);
+    if(url.pathname==='/api/auth/config'&&req.method==='GET'){await serial(()=>access.bootstrap(tag));return json(res,200,{sampleOnly:true});}
+    if(url.pathname==='/api/auth/login'&&req.method==='POST'){const input=await body(req);try{return json(res,200,await serial(()=>access.login(req,res,tag,input)));}catch(e){if(['invalid_credentials','account_pending','invalid_mfa_code','invalid_challenge'].includes(e.code))fail(401,'Sign-in failed. Check the sample credentials, approval status or verification code.');throw e;}}
+    if(url.pathname==='/api/auth/register'&&req.method==='POST'){const input=await body(req);if(Object.keys(input).some(k=>!['email','password','name','employeeNumber','requestedRole','facilityId'].includes(k))||!hospital(input.facilityId))fail(400,'Use only the sample staff registration fields.');try{return json(res,201,await serial(()=>access.register(tag,input)));}catch(e){if(e.code==='email_exists'||e.code==='user_exists')fail(409,'This sample email is already registered.');throw e;}}
+    if(url.pathname==='/api/auth/logout'&&req.method==='POST'){await access.logout(req,res);return json(res,200,{ok:true});}
+    if(url.pathname==='/api/piezas/report'&&['GET','POST'].includes(req.method)){const input=req.method==='POST'?JSON.stringify(await body(req,600000)):undefined;const response=await reports[req.method](new Request(`http://${req.headers.host}${url.pathname}`,{method:req.method,headers:req.headers,body:input}));res.writeHead(response.status,Object.fromEntries(response.headers));return res.end(Buffer.from(await response.arrayBuffer()));}
+    if(url.pathname==='/workspace.html'){res.writeHead(302,{Location:'/'});return res.end();}
+    let actor;
+    if(url.pathname.startsWith('/api/'))actor=await access.actor(req,res,tag);
+    if(url.pathname==='/api/auth/me'&&req.method==='GET')return json(res,200,{actor,sampleOnly:true});
+    if(url.pathname==='/api/policy'&&req.method==='GET')return json(res,200,await access.policy(tag));
+    if(url.pathname==='/api/staff'&&req.method==='GET'){if(actor.role!=='admin')fail(403,'Administrator access required.');return json(res,200,{staff:(await access.list(tag,'staff')).map(r=>r.value),audit:(await access.list(tag,'audit')).map(r=>r.value)});}
+    if(url.pathname==='/api/policy'&&req.method==='POST'){if(actor.role!=='admin')fail(403,'Administrator access required.');const input=await body(req);if(!Number.isInteger(input.responseMinutes)||input.responseMinutes<1||input.responseMinutes>1440||typeof input.backupContact!=='string'||!input.backupContact.startsWith('DEMO')||input.backupContact.length>200)fail(400,'Use a 1–1440 minute sample target and a DEMO backup contact.');safeReason(input.backupContact);const policy={...await access.policy(tag),responseMinutes:input.responseMinutes,backupContact:input.backupContact};await serial(async()=>{await access.put(tag,'policy','coordination',policy);await access.audit(tag,actor,'policy-updated','coordination');});return json(res,200,policy);}
+    const staffAction=/^\/api\/staff\/([a-f0-9-]{36})$/.exec(url.pathname);
+    if(staffAction&&req.method==='POST'){const input=await body(req);if(input.status==='approved'&&!hospital(input.facilityId))fail(400,'Choose an assigned sample facility.');input.reason=safeReason(input.reason);return json(res,200,await serial(()=>access.approve(tag,actor,staffAction[1],input)));}
+    if(url.pathname==='/api/readiness'&&req.method==='GET')return json(res,200,await readiness.get(tag));
     const facility=/^\/api\/readiness\/([a-z]+)$/.exec(url.pathname);
-    if(facility&&req.method==='POST'){
-      const tag=scope(req,res),input=await body(req);
-      if(!hospital(facility[1])||!['Open','Limited','Closed'].includes(input?.state))fail(400,'Choose a sample hospital and supported availability.');
-      return await serial(async()=>json(res,200,await readiness.set(tag,facility[1],input.state)));
-    }
-    if(url.pathname==='/api/notifications'&&req.method==='GET'){
-      const base=url.searchParams.get('emsBaseId');if(!hospital(base))fail(400,'Choose an EMS base.');
-      return json(res,200,{notifications:notifications((await records(scope(req,res))).map(decode),base)});
-    }
-    if (url.pathname === '/api/piezas/report' && ['GET','POST'].includes(req.method)) {
-      const input = req.method==='POST' ? JSON.stringify(await body(req,600000)) : undefined;
-      const request=new Request(`http://${req.headers.host}${url.pathname}`,{method:req.method,headers:req.headers,body:input});
-      const response=await reports[req.method](request);
-      res.writeHead(response.status,Object.fromEntries(response.headers));
-      return res.end(Buffer.from(await response.arrayBuffer()));
-    }
-    if (url.pathname === '/api/requests' && req.method === 'GET') {
-      const tag = scope(req,res);
-      return await serial(async () => {
-        await ensureSeed(tag);
-        const rows=(await records(tag)).map(decode).sort((a,b)=>b.createdAt-a.createdAt),base=url.searchParams.get('emsBaseId');
-        if(base&&!hospital(base))fail(400,'Choose an EMS base.');
-        json(res,200,{requests:rows,notifications:base?notifications(rows,base):[]});
-      });
-    }
-    if (url.pathname === '/api/requests' && req.method === 'POST') {
-      const tag=scope(req,res), input=await body(req);
-      const base=input?.emsBaseId||input?.hospitalId;
-      if(input&&typeof input==='object')input.resource=canonicalResource(input.resource)||input.resource;
-      if(!input||Object.keys(input).some(k=>!['emsBaseId','hospitalId','resource','urgency','radiusKm','note','targetHospitalId'].includes(k)))fail(400,'Use only resource coordination fields. Patient data is not accepted.');
-      if(!hospital(base)||(input.emsBaseId&&input.hospitalId&&input.emsBaseId!==input.hospitalId)||!resources.includes(input.resource)||!['Urgent','Critical'].includes(input.urgency)||!Number.isInteger(input.radiusKm)||input.radiusKm<1||input.radiusKm>500||typeof input.note!=='string'||input.note.length>500||(input.targetHospitalId&&!hospital(input.targetHospitalId)))fail(400,'Check the EMS base, supported resource, Urgent or Critical priority, radius and recipient.');
-      if(noteHasSensitiveDetails(input.note))fail(400,'Remove personal names, health identifiers, contact information and clinical details. Use resource or timing details only.');
-      return await serial(async () => {
-        await ensureSeed(tag);
-        const rows=await records(tag);
-        const number = Math.max(1042,...rows.map(r=>Number(r.data.displayId.slice(3))))+1;
-        const r={id:`HC-${number}`,hospitalId:base,resource:input.resource,urgency:input.urgency,radiusKm:input.radiusKm,note:input.note.trim(),createdAt:Date.now(),status:'Awaiting responses',responses:[]};
-        await recordRouting(tag,r,input.targetHospitalId);
-        const saved=await (await store()).create({...encode(r),tags:[tag]});
-        json(res,201,{request:decode(saved)});
-      });
-    }
-    const action=/^\/api\/requests\/([a-f0-9-]{36})\/(hospital-accept|complete|notification-read)$/.exec(url.pathname);
-    if(action&&req.method==='POST'){
-      const tag=scope(req,res),input=await body(req);
-      return await serial(async()=>{
-        const client=await store(),row=await client.get(action[1]);
-        if(row.entityTypeId!==client.getEntityTypeId()||!row.tags.includes(tag))fail(404,'Request not found.');
-        const r=decode(row),at=Date.now();
-        r.delivery??={source:'legacy',recipientIds:null,recordedAt:null,events:[]};
-        if(action[2]==='hospital-accept'){
-          if(!hospital(input?.hospitalId))fail(400,'Choose a receiving hospital.');
-          if(r.status!=='Awaiting responses')fail(409,`This request is already ${r.status.toLowerCase()}${r.acceptedHospitalId?' by '+hospital(r.acceptedHospitalId).name:''}. Refresh to see the latest decision.`);
-          const ready=await readiness.get(tag),states=Object.fromEntries(ready.facilities.map(h=>[h.id,h.state]));
-          if(states[input.hospitalId]==='Closed')fail(409,'This hospital is closed. Update availability before accepting.');
-          const recipients=Array.isArray(r.delivery.recipientIds)?r.delivery.recipientIds:eligibleHospitals(r,states).map(h=>h.id);
-          if(!recipients.includes(input.hospitalId)||!eligibleHospitals(r,states).some(h=>h.id===input.hospitalId))fail(409,'This hospital is not an eligible recipient of this request.');
-          r.acceptedHospitalId=input.hospitalId;r.status='Accepted';
-          r.delivery.acceptanceMode='hospital-direct';r.delivery.acceptedAt=at;r.delivery.notificationReadAt=null;
-          if(!r.responses.some(x=>x.hospitalId===input.hospitalId))r.responses.push({hospitalId:input.hospitalId,availabilityMinutes:0,acceptedAt:at});
-          r.delivery.events.push({action:'hospital-accepted',actorType:'hospital',hospitalId:input.hospitalId,destinationId:input.hospitalId,at});
-        }else{
-          if(!hospital(input?.emsBaseId)||input.emsBaseId!==r.hospitalId)fail(403,'Only the requesting EMS desk can update this request.');
-          if(action[2]==='notification-read'){
-            if(r.delivery.acceptanceMode!=='hospital-direct'||!r.delivery.acceptedAt)fail(409,'There is no acceptance notification to mark read.');
-            r.delivery.notificationReadAt??=at;
-          }else{
-            if(r.status!=='Accepted')fail(409,'Only an accepted request can be marked completed.');
-            r.status='Completed';r.delivery.events.push({action:'completed',actorType:'ems',hospitalId:r.hospitalId,at});
-          }
-        }
-        const saved=decode(await client.update(row.id,encode(r)));
-        json(res,200,{request:saved,notification:notifications([saved],saved.hospitalId)[0]||null});
-      });
-    }
+    if(facility&&req.method==='POST'){if(actor.role!=='hospital'||actor.facilityId!==facility[1])fail(403,'Only staff assigned to this hospital can update availability.');const input=await body(req);if(!['Open','Limited','Closed'].includes(input.state))fail(400,'Choose Open, Limited or Closed.');return await serial(async()=>{const saved=await readiness.set(tag,facility[1],input.state,actor);await access.audit(tag,actor,'availability-updated',facility[1]);return json(res,200,saved);});}
+    if((url.pathname==='/api/requests'||url.pathname==='/api/notifications')&&req.method==='GET'){const ready=await readiness.get(tag),states=Object.fromEntries(ready.facilities.map(h=>[h.id,h.state]));const rows=(await records(tag)).map(decode).filter(r=>canRead(r,actor,states)).sort((a,b)=>b.createdAt-a.createdAt);const base=url.searchParams.get('emsBaseId');if(base&&actor.role==='ems'&&base!==actor.facilityId)fail(403,'Use your assigned EMS base.');const notices=actor.role==='ems'?notifications(rows,actor.facilityId):[];return json(res,200,url.pathname==='/api/notifications'?{notifications:notices}:{requests:rows,notifications:notices});}
+    if(url.pathname==='/api/requests'&&req.method==='POST'){if(actor.role!=='ems')fail(403,'Only EMS staff can submit requests.');const input=await body(req);if(Object.keys(input).some(k=>!['emsBaseId','hospitalId','resource','urgency','radiusKm','note','targetHospitalId','preferredHospitalId'].includes(k)))fail(400,'Use only resource coordination fields. Real patient data is not accepted.');if((input.emsBaseId||input.hospitalId)&&((input.emsBaseId||input.hospitalId)!==actor.facilityId))fail(403,'Use your assigned EMS base.');input.resource=canonicalResource(input.resource);if(!input.resource||!['Urgent','Critical'].includes(input.urgency)||!Number.isInteger(input.radiusKm)||input.radiusKm<1||input.radiusKm>500||(input.preferredHospitalId&&!hospital(input.preferredHospitalId)))fail(400,'Check the supported resource, priority, radius and preferred facility.');input.note=safeReason(input.note,false);
+     return await serial(async()=>{const rows=await records(tag),number=Math.max(1042,...rows.map(r=>Number(r.data.displayId.slice(3))||0))+1,policy=await access.policy(tag);const r={id:`HC-${number}`,hospitalId:actor.facilityId,resource:input.resource,urgency:input.urgency,radiusKm:input.radiusKm,note:input.note,createdAt:Date.now(),status:'Submitted',responses:[]};await recordRouting(tag,r,input.targetHospitalId);r.delivery.requester={type:'ems',userId:actor.userId,name:actor.name,baseHospitalId:actor.facilityId};r.delivery.events[0]={...r.delivery.events[0],userId:actor.userId,name:actor.name};r.delivery.preference=input.preferredHospitalId?{hospitalId:input.preferredHospitalId}:null;r.delivery.responseTargetAt=r.createdAt+policy.responseMinutes*60000;const saved=decode(await (await store()).create({...encode(r),tags:[tag]}));await access.audit(tag,actor,'submitted',saved.id);return json(res,201,{request:saved});});}
+    const action=/^\/api\/requests\/([a-f0-9-]{36})\/([a-z-]+)$/.exec(url.pathname);
+    if(action&&req.method==='POST'){const input=await body(req);return await serial(async()=>{const client=await store(),row=await client.get(action[1]);if(row.entityTypeId!==client.getEntityTypeId()||!row.tags.includes(tag))fail(404,'Request not found.');const r=decode(row),ready=await readiness.get(tag),states=Object.fromEntries(ready.facilities.map(h=>[h.id,h.state]));if(!canRead(r,actor,states))fail(404,'Request not found.');if(action[2]==='delete'){if(actor.role!=='admin')fail(403,'Only the sample administrator can delete example requests.');if(input.reference!==r.id)fail(400,'Enter the exact request reference to confirm deletion.');const reason=safeReason(input.reason);await access.audit(tag,actor,'deletion-requested',r.id,reason);await client.delete(row.id);await access.audit(tag,actor,'request-deleted',r.id,reason);return json(res,200,{deleted:r.id});}await applyAction({r,action:action[2],input,a:actor,ready,policy:await access.policy(tag)});const saved=decode(await client.update(row.id,encode(r)));if(action[2]!=='notification-read')await access.audit(tag,actor,action[2],r.id);return json(res,200,{request:saved});});}
     if(url.pathname.startsWith('/api/'))fail(404,'That feature is not part of the current EMS workflow.');
     if (!['GET','HEAD'].includes(req.method)) fail(405,'That action is not supported.');
-    const files={'/logo.svg':'logo.svg','/coordination-flow.svg':'coordination-flow.svg','/brand.css':'brand.css','/ui-visuals.js':'ui-visuals.js','/':'index.html','/index.html':'index.html','/about.html':'about.html','/about.js':'about.js','/about.css':'about.css','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/hospital.html':'hospital.html','/hospital-profile.js':'hospital-profile.js','/requests.html':'network.html','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/core.css':'core.css','/workspace.css':'workspace.css','/report-widget.js':'report-widget.js'};
+    const files={'/login.html':'login.html','/login.js':'login.js','/staff.html':'staff.html','/staff.js':'staff.js','/sample-staff.js':'sample-staff.js','/access.css':'access.css','/data-care.html':'data-care.html','/logo.svg':'logo.svg','/coordination-flow.svg':'coordination-flow.svg','/brand.css':'brand.css','/ui-visuals.js':'ui-visuals.js','/':'index.html','/index.html':'index.html','/about.html':'about.html','/about.js':'about.js','/about.css':'about.css','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/hospital.html':'hospital.html','/hospital-profile.js':'hospital-profile.js','/requests.html':'network.html','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/core.css':'core.css','/workspace.css':'workspace.css','/report-widget.js':'report-widget.js'};
     const file=files[url.pathname];
     if (!file) fail(404,'Page not found.');
     const data=await readFile(path.join(root,file));
@@ -214,7 +152,7 @@ http.createServer(async (req, res) => {
   } catch (e) {
     const status=e.userFacing ? e.status : 503;
     // Do not send upstream error details or credentials to the browser.
-    if (!res.headersSent) json(res,status,{error:e.userFacing ? e.message : 'Could not reach saved demo requests. Please retry in a moment.'});
+    if (!res.headersSent) json(res,status,{error:e.userFacing ? e.message : 'Saved coordination data is unavailable. Retry; if this is urgent, use your team’s established offline backup process.'});
     else res.end();
     if (!e.userFacing) console.error('Piezas request failed:', e.code || e.name);
   }

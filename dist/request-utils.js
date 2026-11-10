@@ -11,12 +11,13 @@ export const isIncoming=(r,id,states={})=>(r.delivery?.requester?.type==='ems'||
 export const isRelevant=(r,id,states={})=>r.hospitalId===id||isIncoming(r,id,states);
 
 // A single definition keeps desk badges, lists and request ledgers aligned.
+export const isPending=r=>['Submitted','Under review','Awaiting response','Awaiting responses'].includes(r.status);
 export function deskRequests(rows,role,id,view='all',states={}){
  const own=rows.filter(r=>role==='ems'?r.hospitalId===id:isIncoming(r,id,states)||r.acceptedHospitalId===id);
- if(view==='pending'||view==='incoming'||(role==='hospital'&&view==='all'))return own.filter(r=>r.status==='Awaiting responses'&&(role==='ems'||isIncoming(r,id,states)));
+ if(view==='pending'||view==='incoming'||(role==='hospital'&&view==='all'))return own.filter(r=>isPending(r)&&(role==='ems'||isIncoming(r,id,states)));
  if(view==='accepted')return own.filter(r=>r.status==='Accepted'&&(role==='ems'||r.acceptedHospitalId===id));
  if(view==='completed')return own.filter(r=>r.status==='Completed'&&(role==='ems'||r.acceptedHospitalId===id));
- if(view==='active')return own.filter(r=>r.status!=='Completed'&&(role==='ems'||r.status==='Awaiting responses'||r.acceptedHospitalId===id));
+ if(view==='active')return own.filter(r=>r.status!=='Completed'&&(role==='ems'||isPending(r)||r.acceptedHospitalId===id));
  return own;
 }
 export const canonicalResource=value=>resources.find(r=>r.toLowerCase()===String(value).trim().toLowerCase());
