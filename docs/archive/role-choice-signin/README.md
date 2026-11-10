@@ -1,0 +1,1 @@
+The owner explicitly replaced separate role-selection boxes with one shared sign-in form. This prior scenario and test are preserved unchanged. S-062 replaces the obsolete entry-box interaction and verifies every sample account against its actual assigned workspace.

@@ -17,7 +17,7 @@ Piezas users service owns credentials and signed sessions. Cookies are HttpOnly 
 - R-049: BC map stays standalone and has NO About Us link. It uses authenticated availability. Public About Us retains Lee’s interview credit, the interview-paper wording, William Yeung’s name and the reported 12-hour, 3–6-hour, 16-hour and 1–2-hour details without invented quotes; the original logo and diagram remain; operational data routes require approved sample staff access. Responsive interface fits a phone.
 - R-050: Acceptance notifications retain accepting hospital, time and read state. First valid accepting hospital wins. All workflow actions and reasons have server-derived staff identity/time, with least-privilege checks on every read/write.
 
-- R-051: Distinct Dispatcher and ER Unit Coordinator entry boxes guide sign-in; verified assignments still determine access. Hospital receiving activation persists in Piezas, blocks new routing while paused, and shows incoming EMS requests automatically. The nine listed resource types replace Emergency beds for new requests; old records remain readable.
+- R-051: One shared sign-in form serves all staff; verified assignments determine the workspace. Built-in sample accounts retain fixed roles and facilities, with approved sample misassignments repaired and recorded; suspended or rejected access remains blocked. Custom staff assignment controls remain available. Hospital receiving activation persists in Piezas, blocks new routing while paused, and shows incoming EMS requests automatically. The nine listed resource types replace Emergency beds for new requests; old records remain readable.
 
 ## Architecture
 Use the published Piezas SDK: users service for credentials/sessions, entity records for staff approvals, policy, audit, readiness and requests. No local business database, hand-written authentication provider or passwords in entity records. The SDK derives users-service routing from the existing required PIEZAS_API_URL. Existing example requests are retained; no automatic mass deletion or seed recreation. App process serializes mutations; multiple replicas would need durable concurrency controls.
@@ -113,12 +113,6 @@ Given a visitor opens staff sign-in on desktop or phone
 When they explore the page and expand sample desks or request access
 Then email and password are the primary form, sample details and registration start collapsed, the branded coordination illustration is visible, and all access paths remain available without horizontal scrolling
 
-### S-057: Open the correct desk for Dispatcher or ER Unit Coordinator
-covers: R-042, R-051
-Given the sign-in page shows two role entry boxes
-When staff choose Dispatcher or ER Unit Coordinator and sign in
-Then their approved role opens the correct desk, mismatched credentials show an error without granting a session, and role choice cannot grant permissions
-
 ### S-058: Request the expanded resource choices
 covers: R-044, R-050, R-051
 Given EMS creates a request
@@ -143,5 +137,13 @@ Given a historical pending request has no saved recipient list
 When its hospital pauses receiving or closes availability
 Then the older request remains visible with its routing and can still be reviewed, while new delivery and acceptance stay blocked until receiving is active and availability allows it
 
+### S-062: Use one sign-in page and open the correct sample workspace
+covers: R-042, R-043, R-051
+Given everyone uses one email-and-password sign-in form without role-selection boxes
+When each sample account signs in
+Then Dispatcher opens EMS, each hospital sample opens its own hospital inbox, Administrator opens staff management, forged browser roles cannot change access, approved built-in misassignments are repaired with an audit entry, fixed sample roles cannot be reassigned, and suspension is preserved
+
 ## Scope history
 The owner replaced the public role-switching prototype with authenticated SAMPLE staff workflows. The former SPEC and S-024–S-041 browser checks are preserved under docs/archive/public-staff-predecessor; they depended on anonymous writes and unrestricted role/base switching that are intentionally removed. New checks replace that contract with explicit authentication and authorization checks; old checks are not loosened or silently skipped. Real patient access remains out of scope by the owner's explicit choice.
+
+The owner subsequently removed role-selection boxes in favor of the shared sign-in form. The unchanged former S-057 specification and test are archived under docs/archive/role-choice-signin; S-062 verifies the replacement workflow and all sample accounts.
