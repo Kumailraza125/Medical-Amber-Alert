@@ -30,6 +30,9 @@ About Us explains the project in plain language and presents William Yeung’s e
 ### R-031: Restore the original logo and add useful visuals
 Restore the original white-cross-on-teal logo from the archived app on the EMS desk, Hospital desk, map/ledgers, hospital profile and About Us. Add an accessible illustration of the existing EMS request → hospital acceptance → EMS notification workflow on About Us and small decorative icons on desk summary cards and the request form. Local assets load in the hosted build, with legible text and no phone overflow.
 
+### R-032: Keep the BC map separate from request tracking
+The BC map is a standalone page without Active, Incoming or Completed request tabs. A legacy view query on /network.html must still show the map. Keep geographic filters, hospital details, profiles, logo, About Us and a context-preserving return to the correct desk. Map loading and refreshing read only hospital availability, not request records. Older /requests.html bookmarks remain compatible but are not linked from the map. Lee’s visible credit uses the owner’s wording that he contacted William Yeung for an interview and these are his remarks.
+
 ## Data
 - Hospital: static example identity, coordinates, resources and contact; readiness status/update time stored in the existing Piezas facility records.
 - Request: existing Piezas request entity with base hospitalId for geographic routing, resource, priority, radius, note and status.
@@ -138,6 +141,12 @@ covers: R-031
 Given a visitor opens the desks, BC map, hospital profile and About Us
 When each screen renders on desktop or phone
 Then the original logo loads on every screen, the About Us workflow illustration is available with meaningful alternative text, and desk summary icons render without changing request actions or causing horizontal overflow
+
+### S-041: Use the BC map without old request tabs
+covers: R-032
+Given EMS or hospital staff opens the BC map, including an old map link with a request-view query
+When they filter hospitals, open a profile or return to their desk
+Then only the map is shown, there are no Active/Incoming/Completed request tabs or links, the map does not fetch request records, and desk context and hospital interactions still work on desktop and phone
 
 ## Architecture and operational limits
 Piezas owns request, readiness and notification metadata records. The app owns validation, UI, matching and notification polling. Existing entity names and stored records remain compatible; no data is deleted. The app serializes mutations in one process so first acceptance wins; multi-replica deployments would need durable concurrency controls. Active EMS pages poll approximately every 4 seconds and on returning to the page. Poll failures show that updates are unavailable; the app never claims an external message was sent.
