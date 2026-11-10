@@ -138,4 +138,4 @@ async function loadData(background=false){
   else{$('#sync-status').textContent='Updates unavailable — use Refresh to retry.';if(!background)showError(e.message);}
  }finally{if(seq===sequence)loading=false;}
 }
-loadData();setInterval(()=>loadData(true),4000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadData(true);});window.addEventListener('focus',()=>loadData(true));
+loadData();setInterval(()=>loadData(true),30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadData(true);});window.addEventListener('focus',()=>loadData(true));
