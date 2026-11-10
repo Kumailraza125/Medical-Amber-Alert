@@ -167,6 +167,11 @@ Given EMS has more than ten requests
 When staff open the dispatcher workspace, search or filter requests, page through results and start a new request
 Then the queue and New request action are near the top, at most ten rows show initially, filtered counts and paging are consistent, resource/status labels remain readable on phones, the focused form can be opened and closed by keyboard, invalid input is explained, and offline submission never claims success
 
+### S-072: Use a clear administrator task view
+Given an approved sample administrator signs in
+When they open the administrator desk
+Then visual task links show resource help and pending staff counts, settings and staff controls are collapsed until opened, keyboard navigation opens the correct section, staff decisions retain confirmation and reasons, open sections remain open after saving, and the phone layout has no horizontal overflow
+
 ## Scope history
 The owner replaced the public role-switching prototype with authenticated SAMPLE staff workflows. The former SPEC and S-024–S-041 browser checks are preserved under docs/archive/public-staff-predecessor; they depended on anonymous writes and unrestricted role/base switching that are intentionally removed. New checks replace that contract with explicit authentication and authorization checks; old checks are not loosened or silently skipped. Real patient access remains out of scope by the owner's explicit choice.
 
