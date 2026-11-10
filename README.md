@@ -33,3 +33,7 @@ The active scenarios in `SPEC.md` cover the authenticated sample workflow and si
 `npm run build` creates a clean `runtime/` with only hosted app files. Run the quality scan and final acceptance checks before publishing.
 
 Everyone uses one sign-in page. Sample account choices fill credentials; their fixed assignments open Dispatcher (EMS), Maplewood/Riverside (hospital inbox), or Administrator. Built-in sample roles and facilities cannot be reassigned; custom staff assignments remain configurable. Suspended access stays blocked.
+
+Custom resource requests are saved for administrator review, not broadcast as confirmed hospital availability. The administrator must confirm resource support before routing to a currently open, receiving facility within the requested radius; hospital staff still confirm capacity before acceptance. Notes and status updates remain in-app only. The sample map now includes fourteen invented facilities.
+
+Design references: [NHS select controls](https://service-manual.nhs.uk/design-system/components/select), [NHS tables](https://service-manual.nhs.uk/design-system/components/table), and [VA.gov form controls](https://design.va.gov/components/form/combo-box/). These inform interface patterns only; this prototype is not affiliated with or clinically validated by those organizations.

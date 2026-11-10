@@ -17,9 +17,13 @@ Piezas users service owns credentials and signed sessions. Cookies are HttpOnly 
 - R-049: BC map stays standalone and has NO About Us link. It uses authenticated availability. Public About Us retains Lee’s interview credit, the interview-paper wording, William Yeung’s name and the reported 12-hour, 3–6-hour, 16-hour and 1–2-hour details without invented quotes; the original logo and diagram remain; operational data routes require approved sample staff access. Responsive interface fits a phone.
 - R-050: Acceptance notifications retain accepting hospital, time and read state. First valid accepting hospital wins. All workflow actions and reasons have server-derived staff identity/time, with least-privilege checks on every read/write.
 
-- R-051: One shared sign-in form serves all staff; verified assignments determine the workspace. Built-in sample accounts retain fixed roles and facilities, with approved sample misassignments repaired and recorded; suspended or rejected access remains blocked. Custom staff assignment controls remain available. Hospital receiving activation persists in Piezas, blocks new routing while paused, and shows incoming EMS requests automatically. The nine listed resource types replace Emergency beds for new requests; old records remain readable.
+- R-051: One shared sign-in form serves all staff; verified assignments determine the workspace. Built-in sample accounts retain fixed roles and facilities, with approved sample misassignments repaired and recorded; suspended or rejected access remains blocked. Custom staff assignment controls remain available. Hospital receiving activation persists in Piezas, blocks new routing while paused, and shows incoming EMS requests automatically. The nine listed resource types and validated custom names are supported; Emergency beds remains retired. Unlisted resources or explicit no-match help requests are saved for administrator review with no hospital recipients until the administrator verifies and routes them.
 
 - R-052: The urgent request view shows resource, priority, current state and one primary next action. Facility preference and the generic reason/reply box are absent. Exceptions (escalation and reasoned review takeover), recipients, backup and history are secondary disclosures. A receiving time is an operational estimate, not a triage recommendation, safe waiting period or appointment booking. Hospital pending queues sort Critical before Urgent, then oldest first. Responsive screens keep labels, focus and large touch targets clear.
+
+- R-053: The resource picker is a native select with nine catalog choices and an explicit Other option. Custom resource names are validated as resource-only labels, stored in Piezas and marked Needs admin. No availability is invented for unknown resources. Known requests with no current matches can explicitly ask for administrator help. Administrator-only review notes and hospital routing are recorded with staff identity/time; hospital support, receiving state and radius are verified before routing and current capacity is reconfirmed by hospital staff before acceptance.
+- R-054: The sample network contains fourteen invented hospitals across BC. Show all BC resets filters to show the complete network with working markers, lists and single-hospital profiles. New facilities participate in matching and staff assignments. Marker positions are illustrative; distances are straight-line, not routes.
+- R-055: Dispatcher requests appear near the top in compact rows with text and status icons, search, priority filtering and ten-row incremental paging. A prominent New request button opens a keyboard-accessible focused dialog with close, inline errors and clear send/admin-help feedback. Dropdown options are not rebuilt during an unchanged background refresh. Offline saves never report success. Design references are NHS digital service manual select/table patterns and VA.gov form controls; no affiliation or clinical validation is claimed.
 
 ## Architecture
 Use the published Piezas SDK: users service for credentials/sessions, entity records for staff approvals, policy, audit, readiness and requests. No local business database, hand-written authentication provider or passwords in entity records. The SDK derives users-service routing from the existing required PIEZAS_API_URL. Existing example requests are retained; no automatic mass deletion or seed recreation. App process serializes mutations; multiple replicas would need durable concurrency controls.
@@ -91,12 +95,6 @@ Given a visitor opens staff sign-in on desktop or phone
 When they explore the page and expand sample desks or request access
 Then email and password are the primary form, sample details and registration start collapsed, the branded coordination illustration is visible, and all access paths remain available without horizontal scrolling
 
-### S-058: Request the expanded resource choices
-covers: R-044, R-050, R-051
-Given EMS creates a request
-When they choose Ultrasound, CT scan, MRI, X-ray, Advanced Trauma Team, Blood & Lab Work, Cast/Stitches Support, Ventilator or ICU beds
-Then each resource has matching sample hospital capabilities and can be delivered; Emergency beds is removed from new choices and rejected for new requests while historical records are retained
-
 ### S-059: Activate hospital receiving and see EMS requests arrive
 covers: R-045, R-050, R-051
 Given hospital staff can activate or pause receiving new EMS requests
@@ -145,9 +143,35 @@ Given a saved request has an outstanding written coordination question or altern
 When the accepting hospital confirms direct coordination with EMS
 Then pending acceptance or reconfirmation succeeds only with that acknowledgment, prior records remain, history identifies the acting staff, removed fields cannot be submitted on new requests, notes are safely rendered, and sensitive information is rejected
 
+### S-068: Choose catalog resources or submit a custom resource for help
+covers: R-053, R-042, R-050
+Given EMS opens the focused New request form
+When they use the keyboard and dropdown to choose each listed resource or enter an unlisted resource
+Then all nine catalog choices route to matching hospitals, custom resource requests persist as Needs admin without hospital recipients, Emergency beds and invalid names remain rejected, and reopening or refreshing the picker does not change the chosen hospital
+
+### S-069: Review and route administrator-help requests without inventing availability
+covers: R-053, R-042, R-045, R-050
+Given EMS requests an unlisted resource or explicitly asks for help when no hospital matches
+When the administrator responds and confirms a receiving hospital supports the resource
+Then only an administrator can route the request within radius to an open receiving facility, EMS sees the update, the selected hospital sees the custom request and must confirm current capacity and a receiving time before accepting, and no other hospital gains access
+
+### S-070: Explore the expanded hospital network and use a new hospital desk
+covers: R-054, R-042, R-049
+Given the BC map contains fourteen sample hospitals
+When staff show all BC, inspect a new marker and open its profile, and a newly approved hospital coordinator signs in
+Then every sample location appears, marker and list selection agree, the new profile is correct, the new assigned hospital receives and can accept matching requests, and phone layouts do not overflow
+
+### S-071: Scan and search a compact dispatcher queue with a clear next action
+covers: R-055, R-053, R-050
+Given EMS has more than ten requests
+When staff open the dispatcher workspace, search or filter requests, page through results and start a new request
+Then the queue and New request action are near the top, at most ten rows show initially, filtered counts and paging are consistent, resource/status labels remain readable on phones, the focused form can be opened and closed by keyboard, invalid input is explained, and offline submission never claims success
+
 ## Scope history
 The owner replaced the public role-switching prototype with authenticated SAMPLE staff workflows. The former SPEC and S-024–S-041 browser checks are preserved under docs/archive/public-staff-predecessor; they depended on anonymous writes and unrestricted role/base switching that are intentionally removed. New checks replace that contract with explicit authentication and authorization checks; old checks are not loosened or silently skipped. Real patient access remains out of scope by the owner's explicit choice.
 
 The owner subsequently removed role-selection boxes in favor of the shared sign-in form. The unchanged former S-057 specification and test are archived under docs/archive/role-choice-signin; S-062 verifies the replacement workflow and all sample accounts.
 
 The owner subsequently replaced the detailed request dialog with direct, timed acceptance. The unchanged former S-045, S-046, S-050, S-055 and S-060 are archived under docs/archive/detailed-request-workflow; S-063–S-067 cover the replacement.
+
+The owner subsequently replaced the browser datalist resource input with a native select and custom-resource administrator help. Former S-058 is archived under docs/archive/resource-datalist; S-068 replaces its catalog coverage and adds custom requests.
