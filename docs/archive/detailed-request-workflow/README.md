@@ -1,0 +1,1 @@
+The owner requested a single acceptance action with a receiving time and removal of facility preferences and general written coordination. These prior scenarios and tests are preserved unchanged. S-063–S-067 replace the obsolete detailed interaction with direct acceptance, time persistence, privacy, concurrency, fresh confirmations and historical request handling.

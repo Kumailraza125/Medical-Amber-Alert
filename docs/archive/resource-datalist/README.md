@@ -1,0 +1,1 @@
+The owner replaced the suggestion-only resource input with a real dropdown and custom resource support. The old S-058 test and scenario are preserved unchanged; S-068 verifies all nine catalog options, keyboard selection, custom names, and the administrator-help path.

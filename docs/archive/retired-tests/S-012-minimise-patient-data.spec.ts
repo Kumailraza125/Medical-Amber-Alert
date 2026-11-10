@@ -1,0 +1,23 @@
+import {test,expect} from '@playwright/test';
+test('Share a resource request without patient identity',async({page,context})=>{
+ await page.goto('/workspace.html');
+ await page.getByTestId('profile-id').selectOption('demo-002');
+ await page.getByTestId('synthetic-confirmed').check();
+ await page.getByTestId('save-case').click();
+ await page.getByTestId('refer-case').click();
+ await expect(page.getByTestId('case-referral')).toContainText('without patient identity');
+ const response=await context.request.get('/api/requests');
+ const saved=JSON.stringify(await response.json());
+ expect(saved).toContain('CASE-0001');
+ expect(saved).not.toContain('DEMO Jordan Chen');
+ expect(saved).not.toContain('DEMO-PHN');
+ expect(saved).not.toContain('jordan@example.test');
+ expect(saved).not.toContain('previous knee injury');
+ const invalid=await context.request.post('/api/hackathon/cases',{data:{profileId:'demo-002',fullName:'A real name',personalHealthNumber:'1234567890',syntheticConfirmed:true}});
+ expect(invalid.status()).toBe(400);
+ const nested=await context.request.post('/api/hackathon/cases',{data:{profileId:'demo-002',hospitalId:'cedar',resource:'MRI',radiusKm:100,syntheticConfirmed:true,answers:{pain:3,breathingConcern:false,unresponsive:false,majorBleeding:false,fullName:'A real name'}}});
+ expect(nested.status()).toBe(400);
+ await page.getByTestId('open-referral').click();
+ await expect(page.getByTestId('detail-note')).toContainText('CASE-0001');
+ await expect(page.getByTestId('detail-note')).not.toContainText('Jordan');
+});

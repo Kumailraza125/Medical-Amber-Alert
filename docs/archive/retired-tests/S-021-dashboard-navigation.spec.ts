@@ -1,0 +1,22 @@
+import {test,expect} from '@playwright/test';
+test('Open every dashboard summary and see request routing',async({page})=>{
+ await page.goto('/');await page.getByTestId('stat-active').click();
+ await expect(page).toHaveURL(/requests\.html.*view=active/);
+ await expect(page.getByTestId('ledger-HC-1042')).toContainText('Cedar Valley Community Hospital');
+ await expect(page.getByTestId('ledger-HC-1042')).toContainText('Maplewood Regional Hospital');
+ await page.getByTestId('back-dashboard').click();await page.getByTestId('stat-incoming').click();
+ await expect(page).toHaveURL(/view=incoming/);
+ await expect(page.getByTestId('ledger-HC-1037')).toContainText('Maplewood Regional Hospital');
+ await page.getByTestId('back-dashboard').click();await page.getByTestId('stat-nearby').click();
+ await expect(page).toHaveURL(/network\.html/);await expect(page.getByTestId('map-select-maple')).toBeVisible();
+ await page.getByTestId('back-dashboard').click();await page.getByTestId('stat-completed').click();
+ await expect(page).toHaveURL(/view=completed/);
+ await expect(page.getByTestId('ledger-HC-1038')).toContainText('Northcrest General Hospital');
+ await expect(page.getByTestId('ledger-HC-1042')).toHaveCount(0);
+ await expect(page.getByTestId('ledger-search')).toHaveValue('');
+ await page.getByTestId('ledger-search').fill('Northcrest');await expect(page.getByTestId('ledger-HC-1038')).toBeVisible();
+ await page.getByTestId('ledger-search').fill('No such hospital');await expect(page.getByTestId('ledger-HC-1038')).toHaveCount(0);
+ await page.getByTestId('ledger-search').fill('');
+ await page.getByTestId('ledger-detail-HC-1038').click();
+ await expect(page.getByTestId('destination')).toContainText('Northcrest General Hospital');
+});

@@ -1,0 +1,45 @@
+Hospital Connect map sources
+
+BC outline: Statistics Canada, via geoBoundaries gbOpen CAN ADM1.
+Source metadata: https://www.geoboundaries.org/api/current/gbOpen/CAN/ADM1/
+Pinned source: https://github.com/wmgeolab/geoBoundaries/tree/41af8f1/releaseData/gbOpen/CAN/ADM1
+Source licence: Open Government Licence - Canada 2.0 / Statistics Canada Open Licence Agreement.
+https://open.canada.ca/en/open-government-licence-canada
+https://www.statcan.gc.ca/eng/reference/licence
+Modified for this app: British Columbia extracted, properties reduced, polygon coordinates simplified to approximately 0.008 degrees and rounded. This is an illustrative geographic outline, not an official survey or navigation boundary. No endorsement is implied.
+
+Optional street tiles: OpenStreetMap contributors, ODbL.
+https://www.openstreetmap.org/copyright
+https://operations.osmfoundation.org/policies/tiles/
+Tile requests contain map coordinates, not patient/case data. They can be disabled on the map.
+
+Hospital names, locations, resources, contacts and availability: the existing invented Hospital Connect demonstration fixtures. They are not real hospital locations or verified live capacity. No road travel times or ambulance instructions are provided.
+
+Leaflet library licence:
+
+BSD 2-Clause License
+
+Copyright (c) 2010-2023, Volodymyr Agafonkin
+Copyright (c) 2010-2011, CloudMade
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

@@ -24,7 +24,7 @@ export default defineConfig({
   webServer: process.env.PW_BASE_URL
     ? undefined
     : {
-        command: process.env.PIEZAS_TEST_SERVER_CMD || `npm run dev -- --port ${port}`,
+        command: process.env.PIEZAS_TEST_SERVER_CMD || `npm run dev -- --test --port ${port}`,
         port,
         reuseExistingServer: false,
         timeout: 120_000,

@@ -6,3 +6,9 @@ node_modules/
 test-results/
 playwright-report/
 .DS_Store
+
+runtime/
+dist/report-widget.js
+
+dist/map-bundle.js
+dist/map-bundle.css

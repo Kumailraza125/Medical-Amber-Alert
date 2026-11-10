@@ -1,50 +1,25 @@
-# Hospital Connect demo
+# Hospital Connect: core EMS workflow
 
-An interactive hospital resource coordination dashboard built for TeamM8s_App.
+## EMS sends a request
 
-## Run locally
+Choose an EMS dispatch base, required resource, human-set priority, search radius and recipient hospital. Select all eligible nearby hospitals when seeking the first available acceptance. The server saves an EMS desk identity and an immutable recipient list in Piezas. Notes are limited to resource/timing coordination; no patient information should be entered.
 
-Requires Node.js 20 or newer and npm.
+## Hospital accepts directly
 
-```sh
-npm ci
-npm run dev
-```
+Switch to the Hospital desk and select the receiving sample hospital. Open an incoming request and choose **Accept request — notify EMS**. The server checks eligibility, saved recipients, current availability and request status. The first valid hospital acceptance records that hospital as the destination; a competing acceptance gets a conflict rather than overwriting it. There is no second EMS approval step.
 
-Open http://localhost:3100. To use another port, run `npm run dev -- --port 3200`.
+## EMS is notified
 
-## Try the workflow
+A visible EMS desk checks saved updates about every four seconds and when returning to the page. Its acceptance panel names the hospital and shows the acceptance timestamp. The notice remains available after refresh; marking it read saves a timestamp on the same Piezas request. EMS can optionally mark the handoff completed while retaining the accepting hospital and notification history.
 
-1. Start as Cedar Valley Community Hospital and create an MRI request.
-2. Switch to Maplewood Regional Hospital and choose Incoming.
-3. Open the request and offer an availability time.
-4. Switch back to Cedar Valley, accept the response, then mark the request completed.
+## Supporting map and availability
 
-The hospital directory lists sample resources. Resource and radius matching uses fictional facility coordinates and straight-line distances.
+The BC map retains its existing geographic outline, optional street tiles, hospital markers and resource/status/radius filters. Hospital availability is edited in the Hospital desk. The hospitals and availability remain examples, not verified clinical capacity. See `docs/MAP_SOURCES.md` for attribution.
 
-## Files
+## Retired scope
 
-- `dist/index.html`, `dist/styles.css`: page structure and styling.
-- `dist/app.js`: dashboard and in-memory request workflow.
-- `dist/seed.js`: fictional hospitals and requests.
-- `scripts/serve.mjs`: local static server.
-- `SPEC.md`: agreed demo scope and acceptance criteria.
-- `tests/scenarios/`: seven Playwright workflow checks.
+The owner asked to keep only the core EMS → hospital acceptance → EMS notification workflow. Patient-case screening, dataset imports/exports, worker payments and hackathon submission screens/APIs/downloads are no longer served. The former `/workspace.html` link redirects to the core app. Existing Piezas records are not deleted; historical source and checks are archived under `docs/archive`.
 
-The HTML, CSS, and JavaScript in `dist/` are the editable source; no bundler is required. `npm run build` checks JavaScript syntax. A static web host can serve `dist/` directly.
+## Operational limits
 
-## Check the app
-
-```sh
-npm run build
-npx playwright install chromium
-npx playwright test
-```
-
-The browser configuration uses Playwright's installed Chromium by default. On Linux with a system browser, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium`.
-
-## Demo limitations
-
-All hospitals and requests are fictional. Changes reset on refresh and are not shared between visitors. No patient data, real notifications, authentication, or live backend is included. The included Piezas packages support future backend work; this demo makes no Piezas API calls and needs no API key.
-
-The hosting account settings, credentials, and generated local state are intentionally excluded. The existing privately hosted demo remains separate from this GitHub repository.
+No real patient data or actual dispatch is supported. Desk selectors demonstrate contexts rather than authenticated staff roles. Server-only Piezas credentials protect the app connection, but this is not a production healthcare system. In-app notification polling is not an emergency alert channel. Mutations are serialized in the app's single hosting process; multi-replica operation would require durable concurrency safeguards.
