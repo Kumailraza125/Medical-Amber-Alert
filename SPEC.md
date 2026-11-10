@@ -25,6 +25,9 @@ A map hospital link opens a dedicated read-only hospital profile with resources,
 ### R-029: Type a resource and focus new requests on urgent care
 Replace the resource dropdown with a text field with suggestions for supported resources. Match case-insensitively and reject unsupported entries with a useful message rather than inventing eligible capacity. Remove Routine from new submissions while keeping historic records readable.
 
+### R-030: About Us and an attributed healthcare-worker account
+Add an About Us page reachable from the desks and supporting network/profile pages. Explain the project mission and include five paraphrased themes from William Yeung’s account in section 4 of the owner-provided AI Hacathon (1).pdf. Attribute him as a BC paramedic and identify the supplied notes as the source. Do not invent direct quotations, additional interviewees, team credentials, endorsements or verified province-wide statistics. Keep prototype limits clear and preserve desk context on navigation.
+
 ## Data
 - Hospital: static example identity, coordinates, resources and contact; readiness status/update time stored in the existing Piezas facility records.
 - Request: existing Piezas request entity with base hospitalId for geographic routing, resource, priority, radius, note and status.
@@ -121,6 +124,12 @@ covers: R-028
 Given a hospital ledger is open with a search and a BC map is open with a selection and resource filter
 When another desk sends a request or updates hospital availability
 Then the ledger updates automatically and the map shows the changed availability while search, resource filter and selected hospital stay intact, even when the hospital falls outside the current availability filter (marked clearly and excluded from the match count)
+
+### S-039: Read About Us and the attributed paramedic account
+covers: R-030
+Given a visitor opens the EMS or Hospital desk
+When they navigate to About Us on desktop or phone
+Then they can read the mission, William Yeung’s five attributed account themes, the source and paraphrase notice, and return to the same desk context without horizontal overflow; network and hospital-profile pages also link to About Us
 
 ## Architecture and operational limits
 Piezas owns request, readiness and notification metadata records. The app owns validation, UI, matching and notification polling. Existing entity names and stored records remain compatible; no data is deleted. The app serializes mutations in one process so first acceptance wins; multi-replica deployments would need durable concurrency controls. Active EMS pages poll approximately every 4 seconds and on returning to the page. Poll failures show that updates are unavailable; the app never claims an external message was sent.

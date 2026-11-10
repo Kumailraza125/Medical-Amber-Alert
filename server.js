@@ -205,7 +205,7 @@ http.createServer(async (req, res) => {
     }
     if(url.pathname.startsWith('/api/'))fail(404,'That feature is not part of the current EMS workflow.');
     if (!['GET','HEAD'].includes(req.method)) fail(405,'That action is not supported.');
-    const files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/hospital.html':'hospital.html','/hospital-profile.js':'hospital-profile.js','/requests.html':'network.html','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/core.css':'core.css','/workspace.css':'workspace.css','/report-widget.js':'report-widget.js'};
+    const files={'/':'index.html','/index.html':'index.html','/about.html':'about.html','/about.js':'about.js','/about.css':'about.css','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/hospital.html':'hospital.html','/hospital-profile.js':'hospital-profile.js','/requests.html':'network.html','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/core.css':'core.css','/workspace.css':'workspace.css','/report-widget.js':'report-widget.js'};
     const file=files[url.pathname];
     if (!file) fail(404,'Page not found.');
     const data=await readFile(path.join(root,file));
