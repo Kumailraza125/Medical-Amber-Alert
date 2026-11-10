@@ -177,6 +177,11 @@ Given EMS opens a request and expands More actions and Request details
 When automatic updates receive a changed request while staff are entering an escalation reason
 Then both sections remain open, the typed reason and keyboard focus are retained, and the updated request activity appears without closing the dialog
 
+### S-074: Refresh automatically every thirty seconds
+Given a dispatcher has loaded their desk
+When twenty-nine seconds pass and then the next second passes
+Then no scheduled reload occurs before thirty seconds, the next scheduled reload retrieves current requests, and the Refresh button can retrieve them immediately
+
 ## Scope history
 The owner replaced the public role-switching prototype with authenticated SAMPLE staff workflows. The former SPEC and S-024–S-041 browser checks are preserved under docs/archive/public-staff-predecessor; they depended on anonymous writes and unrestricted role/base switching that are intentionally removed. New checks replace that contract with explicit authentication and authorization checks; old checks are not loosened or silently skipped. Real patient access remains out of scope by the owner's explicit choice.
 

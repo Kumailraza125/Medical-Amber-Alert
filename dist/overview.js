@@ -86,6 +86,6 @@ async function load(){
   $('#overview-error').textContent='';
  }finally{refreshing=false;}
 }
-setInterval(()=>{if(!document.hidden)load().catch(e=>{$('#overview-error').textContent=e.message;});},4000);
+setInterval(()=>{if(!document.hidden)load().catch(e=>{$('#overview-error').textContent=e.message;});},30000);
 window.addEventListener('focus',()=>{if($('#refresh-overview'))refresh();});
 load().catch(e=>{$('#overview').innerHTML=`<main class="overview-wrap"><h1>Hospital Connect</h1><p role="alert">${esc(e.message)}</p><button id="retry" class="primary">Retry</button><p><a href="/">Back to dashboard</a></p></main>`;$('#retry').onclick=()=>location.reload();});
