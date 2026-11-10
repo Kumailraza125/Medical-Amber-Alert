@@ -2,9 +2,9 @@ import {hospitals} from './seed.js';
 import {sampleStaff,samplePassword} from './sample-staff.js';
 const $=s=>document.querySelector(s);let challenge=null;
 $('#requested-facility').innerHTML=hospitals.map(h=>`<option value="${h.id}">${h.name}</option>`).join('');
-$('#sample-password').textContent='Sample password: '+samplePassword;
-$('#sample-accounts').innerHTML=sampleStaff.map((s,i)=>`<p><button class="secondary" data-example="${i}" data-testid="sample-${s.role==='hospital'?s.facilityId:s.role}">Use ${s.name}</button><small> ${s.email}</small></p>`).join('');
-document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{$('#email').value=sampleStaff[Number(b.dataset.example)].email;$('#password').value=samplePassword;});
+$('#sample-password').textContent='Public sample password: '+samplePassword;
+$('#sample-accounts').innerHTML=sampleStaff.map((s,i)=>`<button type="button" class="sample-desk" data-example="${i}" data-testid="sample-${s.role==='hospital'?s.facilityId:s.role}"><span aria-hidden="true">${s.role==='ems'?'↗':s.role==='admin'?'⚙':'+'}</span><strong>${s.role==='ems'?'EMS desk':s.role==='admin'?'Administrator':s.facilityId==='maple'?'Maplewood hospital':'Riverside hospital'}</strong><small>${s.role==='hospital'?'Review & accept':'ems'===s.role?'Send & track requests':'Manage sample access'}</small></button>`).join('');
+document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{$('#email').value=sampleStaff[Number(b.dataset.example)].email;$('#password').value=samplePassword;document.querySelectorAll('[data-example]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));$('#email').focus();});
 async function post(path,input){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});const data=await r.json();if(!r.ok)throw Error(data.error||'Could not complete this step.');return data;}
 async function signIn(input){$('#login-error').textContent='';try{const r=await post('/api/auth/login',input);if(r.mfa){challenge=r.mfa.challengeToken;$('#login-form').hidden=true;$('#mfa-form').hidden=false;return;}location.assign(r.actor.role==='admin'?'/staff.html':'/');}catch(e){$('#login-error').textContent=e.message;}}
 $('#login-form').onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;try{await signIn({email:$('#email').value,password:$('#password').value});}finally{b.disabled=false;}};

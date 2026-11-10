@@ -105,5 +105,11 @@ Given a request has a preferred facility and a confirmed acceptance
 When EMS requests another option and hospital staff record a response using their visible controls
 Then the preference and reasons are shown, transfer is blocked until the review finishes, and the original acceptance and history remain
 
+### S-056: Find a simple, visual staff sign-in page
+covers: R-042, R-043
+Given a visitor opens staff sign-in on desktop or phone
+When they explore the page and expand sample desks or request access
+Then email and password are the primary form, sample details and registration start collapsed, the branded coordination illustration is visible, and all access paths remain available without horizontal scrolling
+
 ## Scope history
 The owner replaced the public role-switching prototype with authenticated SAMPLE staff workflows. The former SPEC and S-024–S-041 browser checks are preserved under docs/archive/public-staff-predecessor; they depended on anonymous writes and unrestricted role/base switching that are intentionally removed. New checks replace that contract with explicit authentication and authorization checks; old checks are not loosened or silently skipped. Real patient access remains out of scope by the owner's explicit choice.
