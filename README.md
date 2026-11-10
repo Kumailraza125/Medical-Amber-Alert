@@ -28,6 +28,6 @@ Requires Node.js 22+ and npm. Run `npm ci`, configure server-only settings using
 NODE_USE_ENV_PROXY=1 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3202 npx piezas test
 ```
 
-S-042–S-056 in `SPEC.md` cover the authenticated sample workflow. The previous public role-switching specification and tests are preserved in `docs/archive/public-staff-predecessor`, because anonymous writes and unrestricted desk switching were intentionally removed at the owner’s request. Existing Piezas request records are retained.
+S-042–S-061 in `SPEC.md` cover the authenticated sample workflow. The previous public role-switching specification and tests are preserved in `docs/archive/public-staff-predecessor`, because anonymous writes and unrestricted desk switching were intentionally removed at the owner’s request. Existing Piezas request records are retained.
 
 `npm run build` creates a clean `runtime/` with only hosted app files. Run the quality scan and final acceptance checks before publishing.

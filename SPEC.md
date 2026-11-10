@@ -17,6 +17,8 @@ Piezas users service owns credentials and signed sessions. Cookies are HttpOnly 
 - R-049: BC map stays standalone and has NO About Us link. It uses authenticated availability. Public About Us retains Lee’s interview credit, the interview-paper wording, William Yeung’s name and the reported 12-hour, 3–6-hour, 16-hour and 1–2-hour details without invented quotes; the original logo and diagram remain; operational data routes require approved sample staff access. Responsive interface fits a phone.
 - R-050: Acceptance notifications retain accepting hospital, time and read state. First valid accepting hospital wins. All workflow actions and reasons have server-derived staff identity/time, with least-privilege checks on every read/write.
 
+- R-051: Distinct Dispatcher and ER Unit Coordinator entry boxes guide sign-in; verified assignments still determine access. Hospital receiving activation persists in Piezas, blocks new routing while paused, and shows incoming EMS requests automatically. The nine listed resource types replace Emergency beds for new requests; old records remain readable.
+
 ## Architecture
 Use the published Piezas SDK: users service for credentials/sessions, entity records for staff approvals, policy, audit, readiness and requests. No local business database, hand-written authentication provider or passwords in entity records. The SDK derives users-service routing from the existing required PIEZAS_API_URL. Existing example requests are retained; no automatic mass deletion or seed recreation. App process serializes mutations; multiple replicas would need durable concurrency controls.
 
@@ -110,6 +112,36 @@ covers: R-042, R-043
 Given a visitor opens staff sign-in on desktop or phone
 When they explore the page and expand sample desks or request access
 Then email and password are the primary form, sample details and registration start collapsed, the branded coordination illustration is visible, and all access paths remain available without horizontal scrolling
+
+### S-057: Open the correct desk for Dispatcher or ER Unit Coordinator
+covers: R-042, R-051
+Given the sign-in page shows two role entry boxes
+When staff choose Dispatcher or ER Unit Coordinator and sign in
+Then their approved role opens the correct desk, mismatched credentials show an error without granting a session, and role choice cannot grant permissions
+
+### S-058: Request the expanded resource choices
+covers: R-044, R-050, R-051
+Given EMS creates a request
+When they choose Ultrasound, CT scan, MRI, X-ray, Advanced Trauma Team, Blood & Lab Work, Cast/Stitches Support, Ventilator or ICU beds
+Then each resource has matching sample hospital capabilities and can be delivered; Emergency beds is removed from new choices and rejected for new requests while historical records are retained
+
+### S-059: Activate hospital receiving and see EMS requests arrive
+covers: R-045, R-050, R-051
+Given hospital staff can activate or pause receiving new EMS requests
+When EMS sends a matching request after activation
+Then it appears automatically with an incoming notice, hospital acceptance notifies the requesting EMS desk, pausing blocks new routing and acceptance without hiding existing requests, and another hospital or EMS cannot change the switch
+
+### S-060: Confirm the availability actually shown during review
+covers: R-045, R-051
+Given hospital staff have checked capacity confirmation in an open request
+When another session changes availability
+Then the earlier confirmation cannot accept the newer version, the displayed availability refreshes and the checkbox resets, and staff must confirm the new version explicitly
+
+### S-061: Keep older pending requests visible after receiving is paused
+covers: R-049, R-051
+Given a historical pending request has no saved recipient list
+When its hospital pauses receiving or closes availability
+Then the older request remains visible with its routing and can still be reviewed, while new delivery and acceptance stay blocked until receiving is active and availability allows it
 
 ## Scope history
 The owner replaced the public role-switching prototype with authenticated SAMPLE staff workflows. The former SPEC and S-024–S-041 browser checks are preserved under docs/archive/public-staff-predecessor; they depended on anonymous writes and unrestricted role/base switching that are intentionally removed. New checks replace that contract with explicit authentication and authorization checks; old checks are not loosened or silently skipped. Real patient access remains out of scope by the owner's explicit choice.
