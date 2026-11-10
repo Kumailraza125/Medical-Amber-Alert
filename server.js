@@ -8,7 +8,7 @@ import { Piezas, createReportProblemRoute } from '@piezas/sdk';
 import { hospitals, resources, seedRequests, distance } from './dist/seed.js';
 import { createReadiness } from './lib/readiness.js';
 import { noteHasSensitiveDetails } from './lib/coordination-note.js';
-import {eligibleHospitals} from './dist/request-utils.js';
+import {eligibleHospitals,canonicalResource} from './dist/request-utils.js';
 
 const testing = process.argv.includes('--test');
 const apiKey = testing ? process.env.PIEZAS_TEST_API_KEY : process.env.PIEZAS_API_KEY;
@@ -156,8 +156,9 @@ http.createServer(async (req, res) => {
     if (url.pathname === '/api/requests' && req.method === 'POST') {
       const tag=scope(req,res), input=await body(req);
       const base=input?.emsBaseId||input?.hospitalId;
+      if(input&&typeof input==='object')input.resource=canonicalResource(input.resource)||input.resource;
       if(!input||Object.keys(input).some(k=>!['emsBaseId','hospitalId','resource','urgency','radiusKm','note','targetHospitalId'].includes(k)))fail(400,'Use only resource coordination fields. Patient data is not accepted.');
-      if(!hospital(base)||(input.emsBaseId&&input.hospitalId&&input.emsBaseId!==input.hospitalId)||!resources.includes(input.resource)||!['Routine','Urgent','Critical'].includes(input.urgency)||!Number.isInteger(input.radiusKm)||input.radiusKm<1||input.radiusKm>500||typeof input.note!=='string'||input.note.length>500||(input.targetHospitalId&&!hospital(input.targetHospitalId)))fail(400,'Check the EMS base, resource, priority, radius and recipient.');
+      if(!hospital(base)||(input.emsBaseId&&input.hospitalId&&input.emsBaseId!==input.hospitalId)||!resources.includes(input.resource)||!['Urgent','Critical'].includes(input.urgency)||!Number.isInteger(input.radiusKm)||input.radiusKm<1||input.radiusKm>500||typeof input.note!=='string'||input.note.length>500||(input.targetHospitalId&&!hospital(input.targetHospitalId)))fail(400,'Check the EMS base, supported resource, Urgent or Critical priority, radius and recipient.');
       if(noteHasSensitiveDetails(input.note))fail(400,'Remove personal names, health identifiers, contact information and clinical details. Use resource or timing details only.');
       return await serial(async () => {
         await ensureSeed(tag);
@@ -204,7 +205,7 @@ http.createServer(async (req, res) => {
     }
     if(url.pathname.startsWith('/api/'))fail(404,'That feature is not part of the current EMS workflow.');
     if (!['GET','HEAD'].includes(req.method)) fail(405,'That action is not supported.');
-    const files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/requests.html':'network.html','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/core.css':'core.css','/workspace.css':'workspace.css','/report-widget.js':'report-widget.js'};
+    const files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/request-utils.js':'request-utils.js','/network.html':'network.html','/hospital.html':'hospital.html','/hospital-profile.js':'hospital-profile.js','/requests.html':'network.html','/overview.css':'overview.css','/map-bundle.js':'map-bundle.js','/map-bundle.css':'map-bundle.css','/map-attribution.txt':'map-attribution.txt','/seed.js':'seed.js','/core.css':'core.css','/workspace.css':'workspace.css','/report-widget.js':'report-widget.js'};
     const file=files[url.pathname];
     if (!file) fail(404,'Page not found.');
     const data=await readFile(path.join(root,file));

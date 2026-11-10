@@ -18,6 +18,13 @@ No real patient data, patient intake or AI screening, data imports/exports, work
 - R-025: Invalid input is rejected, shared notes reject common sensitive details, text is rendered safely, failed saves remain visible, and the app fits a phone. [Existing safety/usability requirements retained]
 - R-026: EMS can mark an accepted request complete without losing its accepting hospital or acceptance notification history. [Assumed, core request tracking]
 
+### R-027: Consistent incoming counts and visible saved requests
+Count incoming requests awaiting this hospital's response, not patients or possible acceptances. Use the same saved recipient/status rules for desk and ledger views. Sending while filtered must reveal the saved request; hospital acceptance must move it to Accepted here. Count/filter controls identify their selected view and take visitors to the relevant list.
+### R-028: Explore one hospital without changing working desk
+A map hospital link opens a dedicated read-only hospital profile with resources, status, contact, and an explicit separate action to open that hospital's desk. Return links preserve originating EMS/hospital context. Map and ledger refresh in the background without resetting filters, selection or search.
+### R-029: Type a resource and focus new requests on urgent care
+Replace the resource dropdown with a text field with suggestions for supported resources. Match case-insensitively and reject unsupported entries with a useful message rather than inventing eligible capacity. Remove Routine from new submissions while keeping historic records readable.
+
 ## Data
 - Hospital: static example identity, coordinates, resources and contact; readiness status/update time stored in the existing Piezas facility records.
 - Request: existing Piezas request entity with base hospitalId for geographic routing, resource, priority, radius, note and status.
@@ -85,6 +92,36 @@ Given EMS and hospital pages are loaded
 When their browser loses connection during sending or acceptance
 Then an uncertainty/error message remains visible, no successful change is claimed, and retrying after reconnect works
 
+### S-034: Keep hospital counts and incoming request lists consistent
+covers: R-027
+Given EMS and separate hospital pages share the same saved scope
+When EMS sends to selected or nearby hospitals and a recipient accepts
+Then pending counts equal visible incoming rows, the recipient sees the request automatically, and Accepted here shows only that hospital's accepted requests
+
+### S-035: Reveal a newly saved request despite a previous filter
+covers: R-027
+Given EMS has filtered to completed requests
+When EMS sends a new request
+Then it appears in the request list with its saved recipients and the selected list filter is clear
+
+### S-036: Explore one hospital and return to the same desk context
+covers: R-028
+Given an EMS visitor selects Maplewood on the BC map
+When they open the hospital profile and return to the map
+Then the profile contains only Maplewood's details, preserves the EMS base on return, and switching to Maplewood's working desk is a separate explicit action
+
+### S-037: Type supported resources and reject unsupported or Routine requests
+covers: R-029
+Given EMS types a supported resource using different letter case
+When they send an urgent request
+Then matching uses the supported resource and the request is saved; unsupported resource text and new Routine requests are rejected without creating a record
+
+### S-038: Keep map and ledger views current without losing filters
+covers: R-028
+Given a hospital ledger is open with a search and a BC map is open with a selection and resource filter
+When another desk sends a request or updates hospital availability
+Then the ledger updates automatically and the map shows the changed availability while search, resource filter and selected hospital stay intact, even when the hospital falls outside the current availability filter (marked clearly and excluded from the match count)
+
 ## Architecture and operational limits
 Piezas owns request, readiness and notification metadata records. The app owns validation, UI, matching and notification polling. Existing entity names and stored records remain compatible; no data is deleted. The app serializes mutations in one process so first acceptance wins; multi-replica deployments would need durable concurrency controls. Active EMS pages poll approximately every 4 seconds and on returning to the page. Poll failures show that updates are unavailable; the app never claims an external message was sent.
 
@@ -95,3 +132,10 @@ Previous scenario IDs S-001–S-023 and the preceding specification were archive
 
 ## Owner-approved interface refinement — 2026-11-09
 Simplify the existing core desks and map without changing their workflow. Keep one prominent disclaimer per page covering example data, public role switching, no patient information and no real dispatch. Remove repeated demo/fictional/sample wording from controls and details. Use a clearer visual hierarchy, compact status summary, prominent request form, concise notifications and consistent responsive navigation. Existing S-024–S-033 cover retained behaviour; this is a presentation refinement of those requirements.
+
+## Current workflow corrections — owner request 2026-11-09
+Keep the simplified EMS/hospital/map structure; do not restore retired dashboard duplication or patient-transfer counts that the app does not track.
+
+Real patient information and supervisor-only completion depend on the owner's pending choice between the shared prototype and private staff access. Do not represent context selectors as authentication or relax shared-note protections while this is unresolved.
+
+Owner clarification: defer the decision on real patient information and supervisor-only access. This release retains shared-note protections and the existing EMS completion action, with a clear acceptance-versus-handoff explanation. It does not claim supervisor authentication, confirmed patient arrival, patient counts, clinical triage or external dispatch.

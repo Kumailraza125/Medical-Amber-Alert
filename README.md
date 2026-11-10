@@ -10,6 +10,10 @@ A Piezas-backed EMS-to-hospital coordination demo.
 
 The app now keeps only the EMS desk, Hospital desk, hospital availability, request tracking, acceptance notifications, and supporting map/ledgers. Screening, patient-data tools, worker payments and hackathon submission screens are retired. Historical source and checks remain in `docs/archive`; saved Piezas records are retained.
 
+New requests use Urgent or Critical priority. Type a supported resource using the suggestions; unsupported resources are rejected rather than implying unverified hospital capacity. Incoming badges count pending requests for the selected hospital, not patients. Hospital profiles are read-only; opening a hospital desk is a separate action. Desk and network views refresh saved updates while visible.
+
+Accepted means a hospital agreed to receive the request. Completed records the handoff as finished; it does not independently verify patient arrival. The owner deferred real patient-information handling and supervisor-only access, so shared-note protections and the existing EMS completion action remain.
+
 ## Run locally
 
 Requires Node.js 22+ and npm. Run `npm ci`, configure server-only settings using `.env.example`, then run `npm run build` and `npm run dev`. The local app listens on port 3100. Keep `.env` private and use a separate Piezas test app for `PIEZAS_TEST_API_KEY`.
@@ -22,7 +26,7 @@ Open the EMS desk in one browser and `/?role=hospital&hospital=maple` in another
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium PIEZAS_TEST_PORT=3130 npx piezas test
 ```
 
-If using Playwright's downloaded Chromium, omit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. The current acceptance contract is in `SPEC.md`; S-024–S-033 cover the simplified core workflow. The owner explicitly replaced the prior workflow, so earlier feature checks are archived rather than silently redefined.
+If using Playwright's downloaded Chromium, omit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. The current acceptance contract is in `SPEC.md`; S-024–S-038 cover the simplified core workflow. The owner explicitly replaced the prior workflow, so earlier feature checks are archived rather than silently redefined.
 
 `npm run build` creates a clean `runtime/` containing only core server and public assets. Dependencies, generated builds, local credentials and Piezas account state are excluded from Git. Run the quality scan and then the acceptance checks before publishing.
 
